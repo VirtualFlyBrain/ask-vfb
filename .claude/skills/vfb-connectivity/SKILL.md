@@ -1,6 +1,6 @@
 ---
 name: vfb-connectivity
-description: Query synaptic connectivity between Drosophila neuron classes using VFB — supports upstream/downstream filtering, weight thresholds, and class-level aggregation
+description: Query synaptic connectivity between Drosophila neuron classes using VFB — supports upstream/downstream filtering, weight thresholds, and class-level aggregation. DO NOT USE FOR FINDING CONNECTIONS ON INDIVIDUAL NEURONS OR FOR CONNECTIONS BETWEEN MUSCLES & NEURONS OR SENSE ORGANS AND NEURONS.
 user-invocable: true
 ---
 
