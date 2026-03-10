@@ -1,0 +1,302 @@
+{
+  "title": "LC4 Looming Detection → Escape Circuit",
+  "neurons": [
+    {
+      "id": "LC4",
+      "name": "LC4",
+      "type": "sensory",
+      "neurotransmitter": "acetylcholine",
+      "nt_evidence": "connectome_prediction + immunohistochemistry",
+      "receptors": [],
+      "brain_region": "Lobula → PVLP glomerulus",
+      "known_function": "Looming detector: responds to expanding dark objects with size-dependent timing. Encodes angular size and expansion velocity."
+    },
+    {
+      "id": "LPLC2",
+      "name": "LPLC2",
+      "type": "sensory",
+      "neurotransmitter": "acetylcholine",
+      "nt_evidence": "connectome_prediction",
+      "receptors": [],
+      "brain_region": "Lobula plate + Lobula → PVLP glomerulus",
+      "known_function": "Looming detector: integrates radial optic flow from lobula plate with lobula input. Provides motion-based looming selectivity."
+    },
+    {
+      "id": "LPLC1",
+      "name": "LPLC1",
+      "type": "sensory",
+      "neurotransmitter": "acetylcholine",
+      "nt_evidence": "predicted (no VFB data)",
+      "receptors": [],
+      "brain_region": "Lobula plate + Lobula → PVLP",
+      "known_function": "Visual projection neuron, role in looming circuit unclear. May provide additional motion information."
+    },
+    {
+      "id": "PVLP011",
+      "name": "PVLP011",
+      "type": "interneuron",
+      "neurotransmitter": "GABA",
+      "nt_evidence": "connectome_prediction",
+      "receptors": ["nAChR"],
+      "brain_region": "PVLP",
+      "known_function": "GABAergic interneuron receiving input from LPLC2. Likely provides inhibitory gain control within the looming circuit."
+    },
+    {
+      "id": "PVLP010",
+      "name": "PVLP010",
+      "type": "interneuron",
+      "neurotransmitter": "glutamate",
+      "nt_evidence": "connectome_prediction (Glutamatergic/GABAergic)",
+      "receptors": ["nAChR"],
+      "brain_region": "PVLP",
+      "known_function": "Mixed NT interneuron in PVLP. Receives LC4 input and connects to GF. May provide inhibitory modulation via GluCl."
+    },
+    {
+      "id": "DNp04",
+      "name": "DNp04",
+      "type": "interneuron",
+      "neurotransmitter": "acetylcholine",
+      "nt_evidence": "connectome_prediction",
+      "receptors": ["nAChR"],
+      "brain_region": "PVLP → VNC (descending)",
+      "known_function": "Descending neuron receiving convergent LC4 + LPLC2 input. Parallel escape pathway to GF, may drive wing-based escape."
+    },
+    {
+      "id": "GF",
+      "name": "Giant Fiber (DNp01)",
+      "type": "interneuron",
+      "neurotransmitter": "acetylcholine",
+      "nt_evidence": "literature (cholinergic in MaleCNS; serotonergic tag in Hemibrain disputed)",
+      "receptors": ["nAChR", "GluCl", "Rdl"],
+      "brain_region": "PVLP → VNC descending",
+      "known_function": "Master command neuron for escape jump. Integrates ~15,000 synaptic inputs; LC4 + LPLC2 are dominant visual inputs (~4,648 synapses combined). Fires a single spike to trigger rapid escape."
+    },
+    {
+      "id": "PSI",
+      "name": "PSI",
+      "type": "motor",
+      "neurotransmitter": "acetylcholine",
+      "nt_evidence": "literature",
+      "receptors": [],
+      "brain_region": "Mesothoracic neuromere (VNC)",
+      "known_function": "Peripherally synapsing interneuron. Electrically coupled to GF. Drives DLM flight muscles for wing depression during escape take-off."
+    },
+    {
+      "id": "TTMn",
+      "name": "TTMn",
+      "type": "motor",
+      "neurotransmitter": "acetylcholine",
+      "nt_evidence": "literature",
+      "receptors": [],
+      "brain_region": "Mesothoracic neuromere (VNC)",
+      "known_function": "Tergotrochanteral muscle motor neuron. Electrically coupled to GF. Directly drives the jump muscle for rapid leg extension."
+    },
+    {
+      "id": "GFC1",
+      "name": "GFC1",
+      "type": "interneuron",
+      "neurotransmitter": "unknown",
+      "nt_evidence": "not determined",
+      "receptors": [],
+      "brain_region": "Mesothoracic neuromere (VNC)",
+      "known_function": "Giant fiber coupled neuron. Electrically coupled to GF. Modulates escape motor output, may coordinate leg movements."
+    },
+    {
+      "id": "GFC2",
+      "name": "GFC2",
+      "type": "interneuron",
+      "neurotransmitter": "unknown",
+      "nt_evidence": "not determined",
+      "receptors": [],
+      "brain_region": "Mesothoracic neuromere (VNC)",
+      "known_function": "Giant fiber coupled neuron. Electrically coupled to GF. Coordinates escape motor program."
+    }
+  ],
+  "connections": [
+    {
+      "source": "LC4",
+      "target": "GF",
+      "synapse_count": 2763,
+      "neurotransmitter": "acetylcholine",
+      "sign": "excitatory",
+      "sign_evidence": "nt_based"
+    },
+    {
+      "source": "LPLC2",
+      "target": "GF",
+      "synapse_count": 1885,
+      "neurotransmitter": "acetylcholine",
+      "sign": "excitatory",
+      "sign_evidence": "nt_based"
+    },
+    {
+      "source": "LC4",
+      "target": "DNp04",
+      "synapse_count": 58,
+      "neurotransmitter": "acetylcholine",
+      "sign": "excitatory",
+      "sign_evidence": "nt_based"
+    },
+    {
+      "source": "LPLC2",
+      "target": "DNp04",
+      "synapse_count": 24,
+      "neurotransmitter": "acetylcholine",
+      "sign": "excitatory",
+      "sign_evidence": "nt_based"
+    },
+    {
+      "source": "LPLC2",
+      "target": "PVLP011",
+      "synapse_count": 69,
+      "neurotransmitter": "acetylcholine",
+      "sign": "excitatory",
+      "sign_evidence": "nt_based"
+    },
+    {
+      "source": "LC4",
+      "target": "PVLP010",
+      "synapse_count": 24,
+      "neurotransmitter": "acetylcholine",
+      "sign": "excitatory",
+      "sign_evidence": "nt_based"
+    },
+    {
+      "source": "PVLP010",
+      "target": "GF",
+      "synapse_count": 245,
+      "neurotransmitter": "glutamate",
+      "sign": "inhibitory",
+      "sign_evidence": "receptor_based (GluCl likely)"
+    },
+    {
+      "source": "PVLP011",
+      "target": "GF",
+      "synapse_count": 50,
+      "neurotransmitter": "GABA",
+      "sign": "inhibitory",
+      "sign_evidence": "nt_based"
+    },
+    {
+      "source": "LC4",
+      "target": "LPLC2",
+      "synapse_count": 15,
+      "neurotransmitter": "acetylcholine",
+      "sign": "excitatory",
+      "sign_evidence": "nt_based"
+    },
+    {
+      "source": "LPLC2",
+      "target": "LC4",
+      "synapse_count": 21,
+      "neurotransmitter": "acetylcholine",
+      "sign": "excitatory",
+      "sign_evidence": "nt_based"
+    },
+    {
+      "source": "GF",
+      "target": "TTMn",
+      "synapse_count": 0,
+      "neurotransmitter": "electrical",
+      "sign": "excitatory",
+      "sign_evidence": "literature (gap junctions via ShakB/Innexins)"
+    },
+    {
+      "source": "GF",
+      "target": "PSI",
+      "synapse_count": 0,
+      "neurotransmitter": "electrical",
+      "sign": "excitatory",
+      "sign_evidence": "literature (gap junctions via ShakB/Innexins)"
+    },
+    {
+      "source": "GF",
+      "target": "GFC1",
+      "synapse_count": 0,
+      "neurotransmitter": "electrical",
+      "sign": "excitatory",
+      "sign_evidence": "literature (gap junctions)"
+    },
+    {
+      "source": "GF",
+      "target": "GFC2",
+      "synapse_count": 0,
+      "neurotransmitter": "electrical",
+      "sign": "excitatory",
+      "sign_evidence": "literature (gap junctions)"
+    }
+  ],
+  "hypotheses": [
+    {
+      "description": "Convergent looming computation: LC4 and LPLC2 provide parallel, complementary looming signals to the GF. LC4 encodes expanding edges (size-velocity), while LPLC2 computes radial optic flow (motion-based). Their convergence on GF (~4,648 combined synapses) implements an AND-like gate requiring both feature types for reliable looming detection, reducing false positives from non-looming stimuli.",
+      "confidence": "high",
+      "supporting_evidence": ["von Reyn et al. 2017", "Ache et al. 2019", "Hemibrain connectivity data"]
+    },
+    {
+      "description": "Inhibitory gain control via PVLP interneurons: GABAergic (PVLP011) and glutamatergic/GABAergic (PVLP010) interneurons receive input from LC4/LPLC2 and inhibit the GF. This creates a feedforward inhibition motif that raises the GF's firing threshold, ensuring escape is only triggered by strong, sustained looming signals. This may implement a size-threshold mechanism where escape is triggered only when the approaching object reaches a critical angular size.",
+      "confidence": "medium",
+      "supporting_evidence": ["Hemibrain connectivity (245 + 50 inhibitory synapses onto GF)", "Fotowat et al. 2009 (threshold-based escape)"]
+    },
+    {
+      "description": "Parallel escape pathways: LC4 and LPLC2 both project to DNp04, a separate descending neuron, in addition to the GF. This suggests a dual-pathway architecture where the GF mediates fast, stereotyped escape jumps (via electrical synapses to TTMn), while DNp04 may drive slower, more flexible escape behaviors such as directional wing-based takeoff.",
+      "confidence": "medium",
+      "supporting_evidence": ["Hemibrain connectivity (LC4→DNp04: 58 syn, LPLC2→DNp04: 24 syn)", "Card 2012 (multiple escape strategies)"]
+    },
+    {
+      "description": "Electrical synapses ensure speed and reliability: The GF→TTMn and GF→PSI connections use gap junctions (ShakB/Innexin-dependent), not chemical synapses. This enables sub-millisecond transmission latency, critical for the ~5ms brain-to-muscle escape response. The electrical coupling also makes transmission virtually failure-proof, unlike chemical synapses that can undergo short-term depression.",
+      "confidence": "high",
+      "supporting_evidence": ["King and Wyman 1980", "Allen et al. 1998", "Phelan et al. 1996 (ShakB mutant analysis)"]
+    },
+    {
+      "description": "Lateral excitation between LC4 and LPLC2 may sharpen looming selectivity: The small reciprocal connections between LC4 and LPLC2 (~15-21 synapses) could provide positive feedback during genuine looming stimuli, amplifying the combined signal to GF when both pathways are co-activated by a true approaching object.",
+      "confidence": "low",
+      "supporting_evidence": ["Hemibrain connectivity (lateral connections)", "Hypothetical — functional significance not directly tested"]
+    }
+  ],
+  "citations": [
+    {
+      "key": "von Reyn et al. 2017",
+      "text": "von Reyn CR et al. (2017) Feature integration drives probabilistic behavior in the Drosophila escape response. Neuron 94(6):1190-1204."
+    },
+    {
+      "key": "Ache et al. 2019",
+      "text": "Ache JM et al. (2019) Neural basis for looming size and velocity encoding in the Drosophila giant fiber escape pathway. Current Biology 29(6):1012-1024."
+    },
+    {
+      "key": "Klapoetke et al. 2017",
+      "text": "Klapoetke NC et al. (2017) Ultra-selective looming detection from radial motion opponency. Nature 551:237-241."
+    },
+    {
+      "key": "Scheffer et al. 2020",
+      "text": "Scheffer LK et al. (2020) A connectome and analysis of the adult Drosophila central brain. eLife 9:e57443."
+    },
+    {
+      "key": "King and Wyman 1980",
+      "text": "King DG and Wyman RJ (1980) Anatomy of the giant fibre pathway in Drosophila. I. Three thoracic components of the pathway. J. Neurocytol. 9:753-770."
+    },
+    {
+      "key": "Allen et al. 1998",
+      "text": "Allen MJ et al. (1998) Making an escape: development and function of the Drosophila giant fibre system. Semin. Cell Dev. Biol. 9:529-539."
+    },
+    {
+      "key": "Kennedy and Broadie 2018",
+      "text": "Kennedy T and Broadie K (2018) Newly identified electrically coupled neurons support development of the Drosophila giant fiber model circuit. eNeuro 5(6)."
+    },
+    {
+      "key": "Phelan et al. 1996",
+      "text": "Phelan P et al. (1996) Mutations in shaking-B prevent electrical synapse formation in the Drosophila giant fiber system. J. Neurosci. 16:1101-1113."
+    },
+    {
+      "key": "Fotowat et al. 2009",
+      "text": "Fotowat H et al. (2009) A novel neuronal pathway for visually guided escape in Drosophila melanogaster. J. Neurophysiol. 102:875-885."
+    },
+    {
+      "key": "Card 2012",
+      "text": "Card GM (2012) Escape behaviors in insects. Current Opinion in Neurobiology 22:180-186."
+    },
+    {
+      "key": "Dorkenwald et al. 2024",
+      "text": "Dorkenwald S et al. (2024) Neuronal wiring diagram of an adult brain. Nature 634:124-138."
+    }
+  ]
+}

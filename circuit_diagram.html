@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><title>LC4 Looming Detection → Escape Circuit</title>
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font: 14px/1.5 system-ui, -apple-system, sans-serif; background: #0f1117; color: #e0e0e0; }
+    .layout { display: flex; height: 100vh; }
+    .sidebar { width: 380px; background: #1a1b26; border-right: 1px solid #2d2d44; overflow-y: auto; padding: 20px; flex-shrink: 0; }
+    .main { flex: 1; display: flex; flex-direction: column; }
+    .toolbar { padding: 10px 20px; background: #1a1b26; border-bottom: 1px solid #2d2d44; display: flex; align-items: center; gap: 16px; }
+    .svg-container { flex: 1; overflow: hidden; position: relative; }
+    svg { width: 100%; height: 100%; }
+    h1 { font-size: 18px; margin-bottom: 4px; color: #fff; }
+    h2 { font-size: 14px; color: #888; text-transform: uppercase; margin: 20px 0 10px; letter-spacing: 0.5px; }
+    .subtitle { color: #888; font-size: 12px; margin-bottom: 16px; }
+    .legend { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
+    .legend-item { font-size: 12px; color: #aaa; display: flex; align-items: center; gap: 4px; }
+    .legend-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+    .neuron { cursor: pointer; transition: filter 0.2s; }
+    .neuron:hover { filter: brightness(1.5) drop-shadow(0 0 8px rgba(255,255,255,0.3)); }
+    .neuron-label { font-size: 11px; fill: #ccc; pointer-events: none; }
+    .conn-label { font-size: 9px; fill: #888; pointer-events: none; }
+    .connection { cursor: pointer; transition: stroke-opacity 0.2s; }
+    .connection:hover { stroke-opacity: 1; stroke-width: 3; }
+    .hypothesis { background: #252542; border-radius: 8px; padding: 12px; margin-bottom: 10px; }
+    .hypothesis p { margin: 6px 0; font-size: 13px; }
+    .conf-badge { font-size: 10px; padding: 2px 8px; border-radius: 10px; color: #fff; text-transform: uppercase; font-weight: 600; }
+    .evidence { color: #777; font-size: 11px; }
+    .citations { list-style: none; padding: 0; }
+    .citations li { padding: 6px 0; border-bottom: 1px solid #2d2d44; font-size: 12px; }
+    .citations li strong { color: #aaa; }
+    .tooltip { position: absolute; background: #252542; border: 1px solid #3d3d5c; border-radius: 6px; padding: 10px; font-size: 12px; pointer-events: none; white-space: pre-line; z-index: 100; max-width: 300px; display: none; }
+    .detail-panel { display: none; background: #252542; border-radius: 8px; padding: 14px; margin-bottom: 10px; }
+    .detail-panel.active { display: block; }
+    .detail-panel h3 { font-size: 14px; color: #fff; margin-bottom: 8px; }
+    .detail-row { display: flex; justify-content: space-between; padding: 4px 0; font-size: 12px; border-bottom: 1px solid #2d2d44; }
+    .detail-row .label { color: #888; }
+    .detail-row .value { color: #e0e0e0; text-align: right; max-width: 200px; }
+    button { background: #3d3d5c; border: none; color: #ccc; padding: 6px 14px; border-radius: 4px; cursor: pointer; font-size: 12px; }
+    button:hover { background: #4d4d6c; }
+    button.active { background: #6366f1; color: #fff; }
+</style>
+</head><body>
+<div class="layout">
+    <div class="sidebar">
+        <h1>LC4 Looming Detection → Escape Circuit</h1>
+        <p class="subtitle">Generated from VFB connectivity data</p>
+
+        <div id="detail-panel" class="detail-panel"></div>
+
+        <h2>Legend — Neurotransmitters</h2>
+        <div class="legend"><span class="legend-item"><span class="legend-dot" style="background:#4CAF50"></span>Acetylcholine</span><span class="legend-item"><span class="legend-dot" style="background:#E53935"></span>Gaba</span><span class="legend-item"><span class="legend-dot" style="background:#FB8C00"></span>Glutamate</span><span class="legend-item"><span class="legend-dot" style="background:#AB47BC"></span>Serotonin</span><span class="legend-item"><span class="legend-dot" style="background:#42A5F5"></span>Dopamine</span><span class="legend-item"><span class="legend-dot" style="background:#26A69A"></span>Octopamine</span><span class="legend-item"><span class="legend-dot" style="background:#78909C"></span>Tyramine</span><span class="legend-item"><span class="legend-dot" style="background:#8D6E63"></span>Histamine</span></div>
+        <h2>Legend — Neuron Types</h2>
+        <div class="legend">
+        <span class="legend-item">&#9651; Sensory</span>
+        <span class="legend-item">&#9675; Interneuron</span>
+        <span class="legend-item">&#9671; Modulatory</span>
+        <span class="legend-item">&#9633; Motor/Output</span>
+    </div>
+
+        <h2>Functional Hypotheses</h2>
+        
+        <div class="hypothesis">
+            <span class="conf-badge" style="background:#4CAF50">high</span>
+            <p>Convergent looming computation: LC4 and LPLC2 provide parallel, complementary looming signals to the GF. LC4 encodes expanding edges (size-velocity), while LPLC2 computes radial optic flow (motion-based). Their convergence on GF (~4,648 combined synapses) implements an AND-like gate requiring both feature types for reliable looming detection, reducing false positives from non-looming stimuli.</p>
+            <small class="evidence">Evidence: von Reyn et al. 2017, Ache et al. 2019, Hemibrain connectivity data</small>
+        </div>
+        <div class="hypothesis">
+            <span class="conf-badge" style="background:#FB8C00">medium</span>
+            <p>Inhibitory gain control via PVLP interneurons: GABAergic (PVLP011) and glutamatergic/GABAergic (PVLP010) interneurons receive input from LC4/LPLC2 and inhibit the GF. This creates a feedforward inhibition motif that raises the GF's firing threshold, ensuring escape is only triggered by strong, sustained looming signals. This may implement a size-threshold mechanism where escape is triggered only when the approaching object reaches a critical angular size.</p>
+            <small class="evidence">Evidence: Hemibrain connectivity (245 + 50 inhibitory synapses onto GF), Fotowat et al. 2009 (threshold-based escape)</small>
+        </div>
+        <div class="hypothesis">
+            <span class="conf-badge" style="background:#FB8C00">medium</span>
+            <p>Parallel escape pathways: LC4 and LPLC2 both project to DNp04, a separate descending neuron, in addition to the GF. This suggests a dual-pathway architecture where the GF mediates fast, stereotyped escape jumps (via electrical synapses to TTMn), while DNp04 may drive slower, more flexible escape behaviors such as directional wing-based takeoff.</p>
+            <small class="evidence">Evidence: Hemibrain connectivity (LC4→DNp04: 58 syn, LPLC2→DNp04: 24 syn), Card 2012 (multiple escape strategies)</small>
+        </div>
+        <div class="hypothesis">
+            <span class="conf-badge" style="background:#4CAF50">high</span>
+            <p>Electrical synapses ensure speed and reliability: The GF→TTMn and GF→PSI connections use gap junctions (ShakB/Innexin-dependent), not chemical synapses. This enables sub-millisecond transmission latency, critical for the ~5ms brain-to-muscle escape response. The electrical coupling also makes transmission virtually failure-proof, unlike chemical synapses that can undergo short-term depression.</p>
+            <small class="evidence">Evidence: King and Wyman 1980, Allen et al. 1998, Phelan et al. 1996 (ShakB mutant analysis)</small>
+        </div>
+        <div class="hypothesis">
+            <span class="conf-badge" style="background:#E53935">low</span>
+            <p>Lateral excitation between LC4 and LPLC2 may sharpen looming selectivity: The small reciprocal connections between LC4 and LPLC2 (~15-21 synapses) could provide positive feedback during genuine looming stimuli, amplifying the combined signal to GF when both pathways are co-activated by a true approaching object.</p>
+            <small class="evidence">Evidence: Hemibrain connectivity (lateral connections), Hypothetical — functional significance not directly tested</small>
+        </div>
+
+        <h2>Citations</h2>
+        <ul class="citations"><li><strong>von Reyn et al. 2017</strong>: von Reyn CR et al. (2017) Feature integration drives probabilistic behavior in the Drosophila escape response. Neuron 94(6):1190-1204.</li><li><strong>Ache et al. 2019</strong>: Ache JM et al. (2019) Neural basis for looming size and velocity encoding in the Drosophila giant fiber escape pathway. Current Biology 29(6):1012-1024.</li><li><strong>Klapoetke et al. 2017</strong>: Klapoetke NC et al. (2017) Ultra-selective looming detection from radial motion opponency. Nature 551:237-241.</li><li><strong>Scheffer et al. 2020</strong>: Scheffer LK et al. (2020) A connectome and analysis of the adult Drosophila central brain. eLife 9:e57443.</li><li><strong>King and Wyman 1980</strong>: King DG and Wyman RJ (1980) Anatomy of the giant fibre pathway in Drosophila. I. Three thoracic components of the pathway. J. Neurocytol. 9:753-770.</li><li><strong>Allen et al. 1998</strong>: Allen MJ et al. (1998) Making an escape: development and function of the Drosophila giant fibre system. Semin. Cell Dev. Biol. 9:529-539.</li><li><strong>Kennedy and Broadie 2018</strong>: Kennedy T and Broadie K (2018) Newly identified electrically coupled neurons support development of the Drosophila giant fiber model circuit. eNeuro 5(6).</li><li><strong>Phelan et al. 1996</strong>: Phelan P et al. (1996) Mutations in shaking-B prevent electrical synapse formation in the Drosophila giant fiber system. J. Neurosci. 16:1101-1113.</li><li><strong>Fotowat et al. 2009</strong>: Fotowat H et al. (2009) A novel neuronal pathway for visually guided escape in Drosophila melanogaster. J. Neurophysiol. 102:875-885.</li><li><strong>Card 2012</strong>: Card GM (2012) Escape behaviors in insects. Current Opinion in Neurobiology 22:180-186.</li><li><strong>Dorkenwald et al. 2024</strong>: Dorkenwald S et al. (2024) Neuronal wiring diagram of an adult brain. Nature 634:124-138.</li></ul>
+    </div>
+    <div class="main">
+        <div class="toolbar">
+            <button onclick="resetView()">Reset View</button>
+            <button id="btn-labels" class="active" onclick="toggleLabels()">Labels</button>
+            <span style="color:#666;font-size:12px;margin-left:auto;">11 neurons &middot; 14 connections</span>
+        </div>
+        <div class="svg-container" id="svg-container">
+            <svg id="circuit" viewBox="0 0 1000 700" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <marker id="arrow-exc" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+                        <path d="M0,0 L10,5 L0,10 Z" fill="#4CAF50"/>
+                    </marker>
+                    <marker id="arrow-inh" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+                        <circle cx="5" cy="5" r="4" fill="#E53935"/>
+                    </marker>
+                </defs>
+                <g id="connections"><path d="M150.0,120.0 Q325.0,270.0 500.0,420.0" fill="none" stroke="#4CAF50" stroke-width="2" stroke-opacity="0.7" marker-end="url(#arrow-exc)" class="connection" data-tooltip="LC4 → Giant Fiber (DNp01)\nSynapses: 2763\nNT: acetylcholine\nSign: excitatory"/><text x="325.0" y="264.0" text-anchor="middle" class="conn-label">acetylcholine (2763 syn)</text><path d="M150.0,370.0 Q325.0,395.0 500.0,420.0" fill="none" stroke="#4CAF50" stroke-width="2" stroke-opacity="0.7" marker-end="url(#arrow-exc)" class="connection" data-tooltip="LPLC2 → Giant Fiber (DNp01)\nSynapses: 1885\nNT: acetylcholine\nSign: excitatory"/><text x="325.0" y="389.0" text-anchor="middle" class="conn-label">acetylcholine (1885 syn)</text><path d="M150.0,120.0 Q325.0,220.0 500.0,320.0" fill="none" stroke="#4CAF50" stroke-width="2" stroke-opacity="0.7" marker-end="url(#arrow-exc)" class="connection" data-tooltip="LC4 → DNp04\nSynapses: 58\nNT: acetylcholine\nSign: excitatory"/><text x="325.0" y="214.0" text-anchor="middle" class="conn-label">acetylcholine (58 syn)</text><path d="M150.0,370.0 Q325.0,345.0 500.0,320.0" fill="none" stroke="#4CAF50" stroke-width="2" stroke-opacity="0.7" marker-end="url(#arrow-exc)" class="connection" data-tooltip="LPLC2 → DNp04\nSynapses: 24\nNT: acetylcholine\nSign: excitatory"/><text x="325.0" y="339.0" text-anchor="middle" class="conn-label">acetylcholine (24 syn)</text><path d="M150.0,370.0 Q325.0,245.0 500.0,120.0" fill="none" stroke="#4CAF50" stroke-width="2" stroke-opacity="0.7" marker-end="url(#arrow-exc)" class="connection" data-tooltip="LPLC2 → PVLP011\nSynapses: 69\nNT: acetylcholine\nSign: excitatory"/><text x="325.0" y="239.0" text-anchor="middle" class="conn-label">acetylcholine (69 syn)</text><path d="M150.0,120.0 Q325.0,170.0 500.0,220.0" fill="none" stroke="#4CAF50" stroke-width="2" stroke-opacity="0.7" marker-end="url(#arrow-exc)" class="connection" data-tooltip="LC4 → PVLP010\nSynapses: 24\nNT: acetylcholine\nSign: excitatory"/><text x="325.0" y="164.0" text-anchor="middle" class="conn-label">acetylcholine (24 syn)</text><path d="M500.0,220.0 Q500.0,320.0 500.0,420.0" fill="none" stroke="#E53935" stroke-width="2" stroke-opacity="0.7" marker-end="url(#arrow-inh)" class="connection" data-tooltip="PVLP010 → Giant Fiber (DNp01)\nSynapses: 245\nNT: glutamate\nSign: inhibitory"/><text x="500.0" y="314.0" text-anchor="middle" class="conn-label">glutamate (245 syn)</text><path d="M500.0,120.0 Q500.0,270.0 500.0,420.0" fill="none" stroke="#E53935" stroke-width="2" stroke-opacity="0.7" marker-end="url(#arrow-inh)" class="connection" data-tooltip="PVLP011 → Giant Fiber (DNp01)\nSynapses: 50\nNT: GABA\nSign: inhibitory"/><text x="500.0" y="264.0" text-anchor="middle" class="conn-label">GABA (50 syn)</text><path d="M150.0,120.0 Q170.0,245.0 150.0,370.0" fill="none" stroke="#4CAF50" stroke-width="2" stroke-opacity="0.7" marker-end="url(#arrow-exc)" class="connection" data-tooltip="LC4 → LPLC2\nSynapses: 15\nNT: acetylcholine\nSign: excitatory"/><text x="160.0" y="239.0" text-anchor="middle" class="conn-label">acetylcholine (15 syn)</text><path d="M150.0,370.0 Q170.0,245.0 150.0,120.0" fill="none" stroke="#4CAF50" stroke-width="2" stroke-opacity="0.7" marker-end="url(#arrow-exc)" class="connection" data-tooltip="LPLC2 → LC4\nSynapses: 21\nNT: acetylcholine\nSign: excitatory"/><text x="160.0" y="239.0" text-anchor="middle" class="conn-label">acetylcholine (21 syn)</text><path d="M500.0,420.0 Q675.0,520.0 850.0,620.0" fill="none" stroke="#4CAF50" stroke-width="2" stroke-opacity="0.7" marker-end="url(#arrow-exc)" class="connection" data-tooltip="Giant Fiber (DNp01) → TTMn\nSynapses: 0\nNT: electrical\nSign: excitatory"/><text x="675.0" y="514.0" text-anchor="middle" class="conn-label">electrical (0 syn)</text><path d="M500.0,420.0 Q675.0,270.0 850.0,120.0" fill="none" stroke="#4CAF50" stroke-width="2" stroke-opacity="0.7" marker-end="url(#arrow-exc)" class="connection" data-tooltip="Giant Fiber (DNp01) → PSI\nSynapses: 0\nNT: electrical\nSign: excitatory"/><text x="675.0" y="264.0" text-anchor="middle" class="conn-label">electrical (0 syn)</text><path d="M500.0,420.0 Q500.0,470.0 500.0,520.0" fill="none" stroke="#4CAF50" stroke-width="2" stroke-opacity="0.7" marker-end="url(#arrow-exc)" class="connection" data-tooltip="Giant Fiber (DNp01) → GFC1\nSynapses: 0\nNT: electrical\nSign: excitatory"/><text x="500.0" y="464.0" text-anchor="middle" class="conn-label">electrical (0 syn)</text><path d="M500.0,420.0 Q500.0,520.0 500.0,620.0" fill="none" stroke="#4CAF50" stroke-width="2" stroke-opacity="0.7" marker-end="url(#arrow-exc)" class="connection" data-tooltip="Giant Fiber (DNp01) → GFC2\nSynapses: 0\nNT: electrical\nSign: excitatory"/><text x="500.0" y="514.0" text-anchor="middle" class="conn-label">electrical (0 syn)</text></g>
+                <g id="neurons"><g data-tooltip="LC4\nType: sensory\nNT: acetylcholine (connectome_prediction + immunohistochemistry)\nReceptors: unknown\nFunction: Looming detector: responds to expanding dark objects with size-dependent timing. Encodes angular size and expansion velocity."><polygon points="150.0,90.0 124.0,138.0 176.0,138.0" fill="#4CAF50" fill-opacity="0.2" stroke="#4CAF50" stroke-width="2.5" class="neuron" data-id="LC4"/><text x="150.0" y="165.0" text-anchor="middle" class="neuron-label">LC4</text></g><g data-tooltip="LPLC2\nType: sensory\nNT: acetylcholine (connectome_prediction)\nReceptors: unknown\nFunction: Looming detector: integrates radial optic flow from lobula plate with lobula input. Provides motion-based looming selectivity."><polygon points="150.0,340.0 124.0,388.0 176.0,388.0" fill="#4CAF50" fill-opacity="0.2" stroke="#4CAF50" stroke-width="2.5" class="neuron" data-id="LPLC2"/><text x="150.0" y="415.0" text-anchor="middle" class="neuron-label">LPLC2</text></g><g data-tooltip="LPLC1\nType: sensory\nNT: acetylcholine (predicted (no VFB data))\nReceptors: unknown\nFunction: Visual projection neuron, role in looming circuit unclear. May provide additional motion information."><polygon points="150.0,590.0 124.0,638.0 176.0,638.0" fill="#4CAF50" fill-opacity="0.2" stroke="#4CAF50" stroke-width="2.5" class="neuron" data-id="LPLC1"/><text x="150.0" y="665.0" text-anchor="middle" class="neuron-label">LPLC1</text></g><g data-tooltip="PVLP011\nType: interneuron\nNT: GABA (connectome_prediction)\nReceptors: nAChR\nFunction: GABAergic interneuron receiving input from LPLC2. Likely provides inhibitory gain control within the looming circuit."><circle cx="500.0" cy="120.0" r="28" fill="#E53935" fill-opacity="0.2" stroke="#E53935" stroke-width="2.5" class="neuron" data-id="PVLP011"/><text x="500.0" y="165.0" text-anchor="middle" class="neuron-label">PVLP011</text></g><g data-tooltip="PVLP010\nType: interneuron\nNT: glutamate (connectome_prediction (Glutamatergic/GABAergic))\nReceptors: nAChR\nFunction: Mixed NT interneuron in PVLP. Receives LC4 input and connects to GF. May provide inhibitory modulation via GluCl."><circle cx="500.0" cy="220.0" r="28" fill="#FB8C00" fill-opacity="0.2" stroke="#FB8C00" stroke-width="2.5" class="neuron" data-id="PVLP010"/><text x="500.0" y="265.0" text-anchor="middle" class="neuron-label">PVLP010</text></g><g data-tooltip="DNp04\nType: interneuron\nNT: acetylcholine (connectome_prediction)\nReceptors: nAChR\nFunction: Descending neuron receiving convergent LC4 + LPLC2 input. Parallel escape pathway to GF, may drive wing-based escape."><circle cx="500.0" cy="320.0" r="28" fill="#4CAF50" fill-opacity="0.2" stroke="#4CAF50" stroke-width="2.5" class="neuron" data-id="DNp04"/><text x="500.0" y="365.0" text-anchor="middle" class="neuron-label">DNp04</text></g><g data-tooltip="Giant Fiber (DNp01)\nType: interneuron\nNT: acetylcholine (literature (cholinergic in MaleCNS; serotonergic tag in Hemibrain disputed))\nReceptors: nAChR, GluCl, Rdl\nFunction: Master command neuron for escape jump. Integrates ~15,000 synaptic inputs; LC4 + LPLC2 are dominant visual inputs (~4,648 synapses combined). Fires a single spike to trigger rapid escape."><circle cx="500.0" cy="420.0" r="28" fill="#4CAF50" fill-opacity="0.2" stroke="#4CAF50" stroke-width="2.5" class="neuron" data-id="GF"/><text x="500.0" y="465.0" text-anchor="middle" class="neuron-label">Giant Fiber (DNp01)</text></g><g data-tooltip="PSI\nType: motor\nNT: acetylcholine (literature)\nReceptors: unknown\nFunction: Peripherally synapsing interneuron. Electrically coupled to GF. Drives DLM flight muscles for wing depression during escape take-off."><rect x="826.0" y="96.0" width="48" height="48" rx="6" fill="#4CAF50" fill-opacity="0.2" stroke="#4CAF50" stroke-width="2.5" class="neuron" data-id="PSI"/><text x="850.0" y="165.0" text-anchor="middle" class="neuron-label">PSI</text></g><g data-tooltip="TTMn\nType: motor\nNT: acetylcholine (literature)\nReceptors: unknown\nFunction: Tergotrochanteral muscle motor neuron. Electrically coupled to GF. Directly drives the jump muscle for rapid leg extension."><rect x="826.0" y="596.0" width="48" height="48" rx="6" fill="#4CAF50" fill-opacity="0.2" stroke="#4CAF50" stroke-width="2.5" class="neuron" data-id="TTMn"/><text x="850.0" y="665.0" text-anchor="middle" class="neuron-label">TTMn</text></g><g data-tooltip="GFC1\nType: interneuron\nNT: unknown (not determined)\nReceptors: unknown\nFunction: Giant fiber coupled neuron. Electrically coupled to GF. Modulates escape motor output, may coordinate leg movements."><circle cx="500.0" cy="520.0" r="28" fill="#9E9E9E" fill-opacity="0.2" stroke="#9E9E9E" stroke-width="2.5" class="neuron" data-id="GFC1"/><text x="500.0" y="565.0" text-anchor="middle" class="neuron-label">GFC1</text></g><g data-tooltip="GFC2\nType: interneuron\nNT: unknown (not determined)\nReceptors: unknown\nFunction: Giant fiber coupled neuron. Electrically coupled to GF. Coordinates escape motor program."><circle cx="500.0" cy="620.0" r="28" fill="#9E9E9E" fill-opacity="0.2" stroke="#9E9E9E" stroke-width="2.5" class="neuron" data-id="GFC2"/><text x="500.0" y="665.0" text-anchor="middle" class="neuron-label">GFC2</text></g></g>
+            </svg>
+            <div class="tooltip" id="tooltip"></div>
+        </div>
+    </div>
+</div>
+<script>
+const data = {
+  "title": "LC4 Looming Detection \u2192 Escape Circuit",
+  "neurons": [
+    {
+      "id": "LC4",
+      "name": "LC4",
+      "type": "sensory",
+      "neurotransmitter": "acetylcholine",
+      "nt_evidence": "connectome_prediction + immunohistochemistry",
+      "receptors": [],
+      "brain_region": "Lobula \u2192 PVLP glomerulus",
+      "known_function": "Looming detector: responds to expanding dark objects with size-dependent timing. Encodes angular size and expansion velocity."
+    },
+    {
+      "id": "LPLC2",
+      "name": "LPLC2",
+      "type": "sensory",
+      "neurotransmitter": "acetylcholine",
+      "nt_evidence": "connectome_prediction",
+      "receptors": [],
+      "brain_region": "Lobula plate + Lobula \u2192 PVLP glomerulus",
+      "known_function": "Looming detector: integrates radial optic flow from lobula plate with lobula input. Provides motion-based looming selectivity."
+    },
+    {
+      "id": "LPLC1",
+      "name": "LPLC1",
+      "type": "sensory",
+      "neurotransmitter": "acetylcholine",
+      "nt_evidence": "predicted (no VFB data)",
+      "receptors": [],
+      "brain_region": "Lobula plate + Lobula \u2192 PVLP",
+      "known_function": "Visual projection neuron, role in looming circuit unclear. May provide additional motion information."
+    },
+    {
+      "id": "PVLP011",
+      "name": "PVLP011",
+      "type": "interneuron",
+      "neurotransmitter": "GABA",
+      "nt_evidence": "connectome_prediction",
+      "receptors": [
+        "nAChR"
+      ],
+      "brain_region": "PVLP",
+      "known_function": "GABAergic interneuron receiving input from LPLC2. Likely provides inhibitory gain control within the looming circuit."
+    },
+    {
+      "id": "PVLP010",
+      "name": "PVLP010",
+      "type": "interneuron",
+      "neurotransmitter": "glutamate",
+      "nt_evidence": "connectome_prediction (Glutamatergic/GABAergic)",
+      "receptors": [
+        "nAChR"
+      ],
+      "brain_region": "PVLP",
+      "known_function": "Mixed NT interneuron in PVLP. Receives LC4 input and connects to GF. May provide inhibitory modulation via GluCl."
+    },
+    {
+      "id": "DNp04",
+      "name": "DNp04",
+      "type": "interneuron",
+      "neurotransmitter": "acetylcholine",
+      "nt_evidence": "connectome_prediction",
+      "receptors": [
+        "nAChR"
+      ],
+      "brain_region": "PVLP \u2192 VNC (descending)",
+      "known_function": "Descending neuron receiving convergent LC4 + LPLC2 input. Parallel escape pathway to GF, may drive wing-based escape."
+    },
+    {
+      "id": "GF",
+      "name": "Giant Fiber (DNp01)",
+      "type": "interneuron",
+      "neurotransmitter": "acetylcholine",
+      "nt_evidence": "literature (cholinergic in MaleCNS; serotonergic tag in Hemibrain disputed)",
+      "receptors": [
+        "nAChR",
+        "GluCl",
+        "Rdl"
+      ],
+      "brain_region": "PVLP \u2192 VNC descending",
+      "known_function": "Master command neuron for escape jump. Integrates ~15,000 synaptic inputs; LC4 + LPLC2 are dominant visual inputs (~4,648 synapses combined). Fires a single spike to trigger rapid escape."
+    },
+    {
+      "id": "PSI",
+      "name": "PSI",
+      "type": "motor",
+      "neurotransmitter": "acetylcholine",
+      "nt_evidence": "literature",
+      "receptors": [],
+      "brain_region": "Mesothoracic neuromere (VNC)",
+      "known_function": "Peripherally synapsing interneuron. Electrically coupled to GF. Drives DLM flight muscles for wing depression during escape take-off."
+    },
+    {
+      "id": "TTMn",
+      "name": "TTMn",
+      "type": "motor",
+      "neurotransmitter": "acetylcholine",
+      "nt_evidence": "literature",
+      "receptors": [],
+      "brain_region": "Mesothoracic neuromere (VNC)",
+      "known_function": "Tergotrochanteral muscle motor neuron. Electrically coupled to GF. Directly drives the jump muscle for rapid leg extension."
+    },
+    {
+      "id": "GFC1",
+      "name": "GFC1",
+      "type": "interneuron",
+      "neurotransmitter": "unknown",
+      "nt_evidence": "not determined",
+      "receptors": [],
+      "brain_region": "Mesothoracic neuromere (VNC)",
+      "known_function": "Giant fiber coupled neuron. Electrically coupled to GF. Modulates escape motor output, may coordinate leg movements."
+    },
+    {
+      "id": "GFC2",
+      "name": "GFC2",
+      "type": "interneuron",
+      "neurotransmitter": "unknown",
+      "nt_evidence": "not determined",
+      "receptors": [],
+      "brain_region": "Mesothoracic neuromere (VNC)",
+      "known_function": "Giant fiber coupled neuron. Electrically coupled to GF. Coordinates escape motor program."
+    }
+  ],
+  "connections": [
+    {
+      "source": "LC4",
+      "target": "GF",
+      "synapse_count": 2763,
+      "neurotransmitter": "acetylcholine",
+      "sign": "excitatory",
+      "sign_evidence": "nt_based"
+    },
+    {
+      "source": "LPLC2",
+      "target": "GF",
+      "synapse_count": 1885,
+      "neurotransmitter": "acetylcholine",
+      "sign": "excitatory",
+      "sign_evidence": "nt_based"
+    },
+    {
+      "source": "LC4",
+      "target": "DNp04",
+      "synapse_count": 58,
+      "neurotransmitter": "acetylcholine",
+      "sign": "excitatory",
+      "sign_evidence": "nt_based"
+    },
+    {
+      "source": "LPLC2",
+      "target": "DNp04",
+      "synapse_count": 24,
+      "neurotransmitter": "acetylcholine",
+      "sign": "excitatory",
+      "sign_evidence": "nt_based"
+    },
+    {
+      "source": "LPLC2",
+      "target": "PVLP011",
+      "synapse_count": 69,
+      "neurotransmitter": "acetylcholine",
+      "sign": "excitatory",
+      "sign_evidence": "nt_based"
+    },
+    {
+      "source": "LC4",
+      "target": "PVLP010",
+      "synapse_count": 24,
+      "neurotransmitter": "acetylcholine",
+      "sign": "excitatory",
+      "sign_evidence": "nt_based"
+    },
+    {
+      "source": "PVLP010",
+      "target": "GF",
+      "synapse_count": 245,
+      "neurotransmitter": "glutamate",
+      "sign": "inhibitory",
+      "sign_evidence": "receptor_based (GluCl likely)"
+    },
+    {
+      "source": "PVLP011",
+      "target": "GF",
+      "synapse_count": 50,
+      "neurotransmitter": "GABA",
+      "sign": "inhibitory",
+      "sign_evidence": "nt_based"
+    },
+    {
+      "source": "LC4",
+      "target": "LPLC2",
+      "synapse_count": 15,
+      "neurotransmitter": "acetylcholine",
+      "sign": "excitatory",
+      "sign_evidence": "nt_based"
+    },
+    {
+      "source": "LPLC2",
+      "target": "LC4",
+      "synapse_count": 21,
+      "neurotransmitter": "acetylcholine",
+      "sign": "excitatory",
+      "sign_evidence": "nt_based"
+    },
+    {
+      "source": "GF",
+      "target": "TTMn",
+      "synapse_count": 0,
+      "neurotransmitter": "electrical",
+      "sign": "excitatory",
+      "sign_evidence": "literature (gap junctions via ShakB/Innexins)"
+    },
+    {
+      "source": "GF",
+      "target": "PSI",
+      "synapse_count": 0,
+      "neurotransmitter": "electrical",
+      "sign": "excitatory",
+      "sign_evidence": "literature (gap junctions via ShakB/Innexins)"
+    },
+    {
+      "source": "GF",
+      "target": "GFC1",
+      "synapse_count": 0,
+      "neurotransmitter": "electrical",
+      "sign": "excitatory",
+      "sign_evidence": "literature (gap junctions)"
+    },
+    {
+      "source": "GF",
+      "target": "GFC2",
+      "synapse_count": 0,
+      "neurotransmitter": "electrical",
+      "sign": "excitatory",
+      "sign_evidence": "literature (gap junctions)"
+    }
+  ],
+  "hypotheses": [
+    {
+      "description": "Convergent looming computation: LC4 and LPLC2 provide parallel, complementary looming signals to the GF. LC4 encodes expanding edges (size-velocity), while LPLC2 computes radial optic flow (motion-based). Their convergence on GF (~4,648 combined synapses) implements an AND-like gate requiring both feature types for reliable looming detection, reducing false positives from non-looming stimuli.",
+      "confidence": "high",
+      "supporting_evidence": [
+        "von Reyn et al. 2017",
+        "Ache et al. 2019",
+        "Hemibrain connectivity data"
+      ]
+    },
+    {
+      "description": "Inhibitory gain control via PVLP interneurons: GABAergic (PVLP011) and glutamatergic/GABAergic (PVLP010) interneurons receive input from LC4/LPLC2 and inhibit the GF. This creates a feedforward inhibition motif that raises the GF's firing threshold, ensuring escape is only triggered by strong, sustained looming signals. This may implement a size-threshold mechanism where escape is triggered only when the approaching object reaches a critical angular size.",
+      "confidence": "medium",
+      "supporting_evidence": [
+        "Hemibrain connectivity (245 + 50 inhibitory synapses onto GF)",
+        "Fotowat et al. 2009 (threshold-based escape)"
+      ]
+    },
+    {
+      "description": "Parallel escape pathways: LC4 and LPLC2 both project to DNp04, a separate descending neuron, in addition to the GF. This suggests a dual-pathway architecture where the GF mediates fast, stereotyped escape jumps (via electrical synapses to TTMn), while DNp04 may drive slower, more flexible escape behaviors such as directional wing-based takeoff.",
+      "confidence": "medium",
+      "supporting_evidence": [
+        "Hemibrain connectivity (LC4\u2192DNp04: 58 syn, LPLC2\u2192DNp04: 24 syn)",
+        "Card 2012 (multiple escape strategies)"
+      ]
+    },
+    {
+      "description": "Electrical synapses ensure speed and reliability: The GF\u2192TTMn and GF\u2192PSI connections use gap junctions (ShakB/Innexin-dependent), not chemical synapses. This enables sub-millisecond transmission latency, critical for the ~5ms brain-to-muscle escape response. The electrical coupling also makes transmission virtually failure-proof, unlike chemical synapses that can undergo short-term depression.",
+      "confidence": "high",
+      "supporting_evidence": [
+        "King and Wyman 1980",
+        "Allen et al. 1998",
+        "Phelan et al. 1996 (ShakB mutant analysis)"
+      ]
+    },
+    {
+      "description": "Lateral excitation between LC4 and LPLC2 may sharpen looming selectivity: The small reciprocal connections between LC4 and LPLC2 (~15-21 synapses) could provide positive feedback during genuine looming stimuli, amplifying the combined signal to GF when both pathways are co-activated by a true approaching object.",
+      "confidence": "low",
+      "supporting_evidence": [
+        "Hemibrain connectivity (lateral connections)",
+        "Hypothetical \u2014 functional significance not directly tested"
+      ]
+    }
+  ],
+  "citations": [
+    {
+      "key": "von Reyn et al. 2017",
+      "text": "von Reyn CR et al. (2017) Feature integration drives probabilistic behavior in the Drosophila escape response. Neuron 94(6):1190-1204."
+    },
+    {
+      "key": "Ache et al. 2019",
+      "text": "Ache JM et al. (2019) Neural basis for looming size and velocity encoding in the Drosophila giant fiber escape pathway. Current Biology 29(6):1012-1024."
+    },
+    {
+      "key": "Klapoetke et al. 2017",
+      "text": "Klapoetke NC et al. (2017) Ultra-selective looming detection from radial motion opponency. Nature 551:237-241."
+    },
+    {
+      "key": "Scheffer et al. 2020",
+      "text": "Scheffer LK et al. (2020) A connectome and analysis of the adult Drosophila central brain. eLife 9:e57443."
+    },
+    {
+      "key": "King and Wyman 1980",
+      "text": "King DG and Wyman RJ (1980) Anatomy of the giant fibre pathway in Drosophila. I. Three thoracic components of the pathway. J. Neurocytol. 9:753-770."
+    },
+    {
+      "key": "Allen et al. 1998",
+      "text": "Allen MJ et al. (1998) Making an escape: development and function of the Drosophila giant fibre system. Semin. Cell Dev. Biol. 9:529-539."
+    },
+    {
+      "key": "Kennedy and Broadie 2018",
+      "text": "Kennedy T and Broadie K (2018) Newly identified electrically coupled neurons support development of the Drosophila giant fiber model circuit. eNeuro 5(6)."
+    },
+    {
+      "key": "Phelan et al. 1996",
+      "text": "Phelan P et al. (1996) Mutations in shaking-B prevent electrical synapse formation in the Drosophila giant fiber system. J. Neurosci. 16:1101-1113."
+    },
+    {
+      "key": "Fotowat et al. 2009",
+      "text": "Fotowat H et al. (2009) A novel neuronal pathway for visually guided escape in Drosophila melanogaster. J. Neurophysiol. 102:875-885."
+    },
+    {
+      "key": "Card 2012",
+      "text": "Card GM (2012) Escape behaviors in insects. Current Opinion in Neurobiology 22:180-186."
+    },
+    {
+      "key": "Dorkenwald et al. 2024",
+      "text": "Dorkenwald S et al. (2024) Neuronal wiring diagram of an adult brain. Nature 634:124-138."
+    }
+  ]
+};
+const neuronMap = {};
+data.neurons.forEach(n => neuronMap[n.id] = n);
+
+// Tooltip
+const tooltip = document.getElementById('tooltip');
+const container = document.getElementById('svg-container');
+document.querySelectorAll('[data-tooltip]').forEach(el => {
+    el.addEventListener('mouseenter', e => {
+        tooltip.textContent = el.getAttribute('data-tooltip').replace(/\\n/g, '\n');
+        tooltip.style.display = 'block';
+    });
+    el.addEventListener('mousemove', e => {
+        const rect = container.getBoundingClientRect();
+        tooltip.style.left = (e.clientX - rect.left + 12) + 'px';
+        tooltip.style.top = (e.clientY - rect.top + 12) + 'px';
+    });
+    el.addEventListener('mouseleave', () => { tooltip.style.display = 'none'; });
+});
+
+// Click neuron for detail panel
+document.querySelectorAll('.neuron').forEach(el => {
+    el.addEventListener('click', () => {
+        const nid = el.getAttribute('data-id');
+        const n = neuronMap[nid];
+        if (!n) return;
+        const panel = document.getElementById('detail-panel');
+        const incoming = data.connections.filter(c => c.target === nid);
+        const outgoing = data.connections.filter(c => c.source === nid);
+        panel.innerHTML = `
+            <h3>${n.name}</h3>
+            <div class="detail-row"><span class="label">Type</span><span class="value">${n.type || 'unknown'}</span></div>
+            <div class="detail-row"><span class="label">Neurotransmitter</span><span class="value">${n.neurotransmitter || 'unknown'} (${n.nt_evidence || '?'})</span></div>
+            <div class="detail-row"><span class="label">Receptors</span><span class="value">${(n.receptors||[]).join(', ') || 'unknown'}</span></div>
+            <div class="detail-row"><span class="label">Region</span><span class="value">${n.brain_region || 'unknown'}</span></div>
+            <div class="detail-row"><span class="label">Function</span><span class="value">${n.known_function || 'unknown'}</span></div>
+            <div class="detail-row"><span class="label">Inputs</span><span class="value">${incoming.length} connections</span></div>
+            <div class="detail-row"><span class="label">Outputs</span><span class="value">${outgoing.length} connections</span></div>
+        `;
+        panel.classList.add('active');
+    });
+});
+
+// Toggle labels
+let labelsVisible = true;
+function toggleLabels() {
+    labelsVisible = !labelsVisible;
+    document.querySelectorAll('.neuron-label, .conn-label').forEach(el => {
+        el.style.display = labelsVisible ? '' : 'none';
+    });
+    document.getElementById('btn-labels').classList.toggle('active', labelsVisible);
+}
+
+// Pan/zoom
+const svg = document.getElementById('circuit');
+let viewBox = { x: 0, y: 0, w: 1000, h: 700 };
+let isPanning = false, startPoint = {};
+svg.addEventListener('wheel', e => {
+    e.preventDefault();
+    const scale = e.deltaY > 0 ? 1.1 : 0.9;
+    const rect = svg.getBoundingClientRect();
+    const mx = (e.clientX - rect.left) / rect.width * viewBox.w + viewBox.x;
+    const my = (e.clientY - rect.top) / rect.height * viewBox.h + viewBox.y;
+    viewBox.w *= scale; viewBox.h *= scale;
+    viewBox.x = mx - (e.clientX - rect.left) / rect.width * viewBox.w;
+    viewBox.y = my - (e.clientY - rect.top) / rect.height * viewBox.h;
+    svg.setAttribute('viewBox', `${viewBox.x} ${viewBox.y} ${viewBox.w} ${viewBox.h}`);
+});
+svg.addEventListener('mousedown', e => { isPanning = true; startPoint = { x: e.clientX, y: e.clientY }; });
+svg.addEventListener('mousemove', e => {
+    if (!isPanning) return;
+    const rect = svg.getBoundingClientRect();
+    const dx = (e.clientX - startPoint.x) / rect.width * viewBox.w;
+    const dy = (e.clientY - startPoint.y) / rect.height * viewBox.h;
+    viewBox.x -= dx; viewBox.y -= dy;
+    svg.setAttribute('viewBox', `${viewBox.x} ${viewBox.y} ${viewBox.w} ${viewBox.h}`);
+    startPoint = { x: e.clientX, y: e.clientY };
+});
+svg.addEventListener('mouseup', () => { isPanning = false; });
+svg.addEventListener('mouseleave', () => { isPanning = false; });
+
+function resetView() {
+    viewBox = { x: 0, y: 0, w: 1000, h: 700 };
+    svg.setAttribute('viewBox', '0 0 1000 700');
+}
+</script>
+</body></html>
