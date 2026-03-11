@@ -1,5 +1,5 @@
 ---
-name: ask-vfb
+name: annotated-connectome
 description: Generates circuit diagrams with functional hypotheses from VFB connectivity data. Pulls neuron connectivity from Virtual Fly Brain, adds neurotransmitter and receptor information from VFB and literature, then produces an interactive HTML circuit diagram with hypothesised functions. Use when the user asks about fly brain circuits, neuron connectivity, circuit function, or mentions VFB neurons.
 argument-hint: "[neuron type or circuit region]"
 allowed-tools: Bash, Read, Write, Edit, Glob, Grep, WebSearch, WebFetch, Agent
@@ -11,9 +11,98 @@ You are building a circuit diagram with functional hypotheses for Drosophila neu
 
 ## Workflow
 
-### Step 1: Identify the target neurons
+### Setup
 
-Use `virtual-fly-brain:search_terms` to find neurons matching the user's query. If the user provides VFB IDs directly, skip to Step 2.
+All Python commands use the .venv created by setup_venv.sh. Always prefix Python execution with:
+
+source .venv/bin/activate && python - <<'EOF'
+...code...
+EOF
+
+Or equivalently use .venv/bin/python directly:
+
+.venv/bin/python -c "..."
+
+Never use the system Python. If .venv is missing, tell the user to run bash setup_venv.sh first.
+
+Step 1: Parse input
+
+Extract from the user's request:
+
+    Upstream neuron type: e.g. "GABAergic neuron", "Kenyon cell", "olfactory receptor neuron" — the presynaptic class
+    Downstream neuron type: e.g. "mushroom body output neuron", "descending neuron" — the postsynaptic class
+    Weight threshold: minimum synapse count per connection (default: 5 if not specified)
+    Group by class: whether to aggregate results by neuron class rather than per individual neuron (default: False)
+    Excluded databases: databases to exclude (default: ['hb', 'fafb'] — excludes Hemibrain and catmaid FAFB)
+    Query mode: infer from user intent:
+
+Clues 	Mode
+"upstream of", "inputs to", "presynaptic to" 	set downstream_type only
+"downstream of", "outputs from", "postsynaptic to" 	set upstream_type only
+"between X and Y", "X → Y", "X to Y" 	set both upstream_type and downstream_type
+"all connections from X", "what does X connect to" 	set upstream_type only
+"summarise by class", "class level", "aggregated" 	group_by_class=True
+
+At least one of upstream_type or downstream_type must be provided. If neither can be extracted, use AskUserQuestion to ask the user.
+Step 2: Resolve neuron type names (optional but recommended)
+
+If the user uses informal or ambiguous neuron names, use the mcp__virtual-fly-brain__search_terms tool to validate and canonicalise the label before querying. This avoids silent failures when a label doesn't match VFB's controlled vocabulary.
+
+Example: searching for "Kenyon cell" confirms the canonical label and short_form ID used in VFB.
+
+If the VFB MCP search returns multiple candidates, show a brief disambiguation list and ask the user to confirm before proceeding.
+
+If the name is already clearly canonical (e.g. "GABAergic neuron", "mushroom body output neuron"), skip this step.
+Step 3: Execute the query
+
+Run via the .venv Python:
+
+source .venv/bin/activate && python - <<'EOF'
+import pandas as pd
+from vfb_connect.cross_server_tools import VfbConnect
+
+vfb = VfbConnect()
+
+df = vfb.get_connected_neurons_by_type(
+    weight=5,                        # replace with parsed weight
+    upstream_type="GABAergic neuron",  # replace or set to None
+    downstream_type=None,              # replace or set to None
+    query_by_label=True,
+    group_by_class=False,
+    exclude_dbs=['hb', 'fafb'],
+    return_dataframe=True
+)
+
+if isinstance(df, int):
+    print("ERROR: at least one of upstream_type or downstream_type must be specified")
+elif df is None or (hasattr(df, '__len__') and len(df) == 0):
+    print("No connections found.")
+else:
+    print(f"{len(df)} connections found")
+    print(df.to_string(index=False))
+EOF
+
+Parameter notes:
+
+    Set unused type to None (not an empty string)
+    query_by_label=True is always correct when passing neuron class labels
+    group_by_class=False returns one row per neuron pair; group_by_class=True aggregates by class
+    exclude_dbs accepts database short_form IDs or symbols; keep defaults unless user asks otherwise
+
+Step 4: Handle results
+
+If connections found (per-neuron mode, group_by_class=False):
+
+DataFrame columns:
+
+    upstream_class, upstream_class_id — class label(s) and ID(s) of the upstream neuron (pipe-separated if multiple)
+    upstream_neuron_id, upstream_neuron_name — individual neuron
+    weight — synapse count
+    downstream_neuron_id, downstream_neuron_name — individual neuron
+    downstream_class, downstream_class_id — class label(s) and ID(s) of downstream neuron
+    up_data_source, up_accession — data source and accession for upstream neuron
+    down_data_source, down_accession — data source and accession for downstream neuron
+
 
 ### Step 2: Gather data in parallel
 
