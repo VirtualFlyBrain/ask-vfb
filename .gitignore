@@ -1,0 +1,4 @@
+.playwright-mcp/*
+.idea/*
+.venv/*
+*.pyc

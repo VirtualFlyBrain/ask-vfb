@@ -26,7 +26,7 @@ Or equivalently use `.venv/bin/python` directly:
 .venv/bin/python -c "..."
 ```
 
-**Never use the system Python.** If `.venv` is missing, tell the user to run `bash setup_venv.sh` first.
+**Never use the system Python.** If `.venv` is missing, run `bash setup_venv.sh` automatically before proceeding with any queries.
 
 ---
 
