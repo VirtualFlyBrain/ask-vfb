@@ -12,7 +12,13 @@ Query synaptic connections between Drosophila neuron types using `vfb_connect.ge
 
 ## Setup
 
-All Python commands use the `.venv` created by `setup_venv.sh`. If `.venv` is missing, run `bash setup_venv.sh` automatically before proceeding.
+All Python commands use the `.venv` created by `setup_venv.sh`.
+
+**Before running any query**, verify the venv exists:
+```bash
+ls .venv/bin/python
+```
+If it does not exist, run `bash setup_venv.sh` and wait for it to complete before proceeding.
 
 Query scripts live in `.claude/skills/vfb-connectivity/scripts/` and are run via:
 
@@ -20,7 +26,7 @@ Query scripts live in `.claude/skills/vfb-connectivity/scripts/` and are run via
 .venv/bin/python .claude/skills/vfb-connectivity/scripts/<script>.py <args>
 ```
 
-**Never use the system Python.** If `.venv` is missing, run `bash setup_venv.sh` automatically before proceeding with any queries.
+**Never use the system Python.**
 
 ### Session initialisation
 

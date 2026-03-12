@@ -13,7 +13,13 @@ Find available Drosophila fly stocks carrying a given gene, allele, or insertion
 
 ## Setup
 
-All Python commands use the `.venv` created by `setup_venv.sh`. If `.venv` is missing, run `bash setup_venv.sh` automatically before proceeding with any queries.
+All Python commands use the `.venv` created by `setup_venv.sh`.
+
+**Before running any query**, verify the venv exists:
+```bash
+ls .venv/bin/python
+```
+If it does not exist, run `bash setup_venv.sh` and wait for it to complete before proceeding.
 
 Query scripts live in `.claude/skills/flybase-stocks/scripts/` and are run via:
 
