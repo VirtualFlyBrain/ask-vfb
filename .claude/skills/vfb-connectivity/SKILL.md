@@ -22,6 +22,16 @@ Query scripts live in `.claude/skills/vfb-connectivity/scripts/` and are run via
 
 **Never use the system Python.**
 
+### Session initialisation
+
+When this skill is first invoked in a new session, fetch the available connectome datasets and cache the result for use throughout the session:
+
+```bash
+.venv/bin/python .claude/skills/vfb-connectivity/scripts/list_datasets.py
+```
+
+This prints each dataset's label and symbol. Use the symbols when constructing `--exclude-dbs` arguments. Present the dataset list to the user when confirming query parameters (Step 1).
+
 ---
 
 ## Instructions
@@ -34,7 +44,8 @@ Extract from the user's request:
 - **Downstream neuron type**: e.g. `"mushroom body output neuron"`, `"descending neuron"` — the postsynaptic class
 - **Weight threshold**: minimum synapse count per connection (default: `5` if not specified)
 - **Group by class**: whether to aggregate results by neuron class rather than per individual neuron (default: `False`)
-- **Excluded databases**: databases to exclude (default: `['hb', 'fafb']` — excludes Hemibrain and catmaid FAFB)
+- **Data sources**: which connectome datasets to include or exclude. Run the dataset listing script (see Setup) to get the current list of available datasets with their symbols. The user can either specify datasets to **exclude** or datasets to **include** (from which you derive the exclude list). Default: exclude `hb` and `fafb`.
+
 - **Query mode**: infer from user intent:
 
 | Clues | Mode |
@@ -45,7 +56,20 @@ Extract from the user's request:
 | "all connections from X", "what does X connect to" | set `upstream_type` only |
 | "summarise by class", "class level", "aggregated" | `group_by_class=True` |
 
-At least one of `upstream_type` or `downstream_type` must be provided. If neither can be extracted, use `AskUserQuestion` to ask the user.
+At least one of `upstream_type` or `downstream_type` must be provided. If neither can be extracted, ask the user.
+
+**Before running the query**, confirm the parameters with the user. Show them what you plan to use and let them adjust. For example:
+
+> Here's what I'll query:
+> - **Upstream type:** Kenyon cell
+> - **Downstream type:** (any)
+> - **Min. weight:** 5
+> - **Group by class:** No (per-neuron results)
+> - **Excluded DBs:** hb, fafb (Hemibrain & catmaid FAFB excluded)
+>
+> Shall I proceed, or would you like to change any of these?
+
+**STOP and wait for the user's reply.** Only proceed to Step 2 after they confirm. If the user's original request already specifies all parameters explicitly, you may skip confirmation.
 
 ---
 
@@ -185,6 +209,6 @@ After presenting results, offer relevant follow-up options:
 ## Notes
 
 - `query_by_label=True` is the correct default — VFB labels like `"Kenyon cell"` match the `rdfs:label` in the knowledge graph
-- The `exclude_dbs` default (`['hb', 'fafb']`) removes Hemibrain and catmaid FAFB datasets; pass `[]` to include all sources
+- `exclude_dbs` accepts dataset symbols (from `list_datasets.py`); default is `['hb', 'fafb']` but always confirm with the user. If the user specifies datasets to **include**, derive the exclude list by subtracting from the full dataset list
 - Class labels may be pipe-separated (e.g. `"Kenyon cell|γ Kenyon cell"`) when a neuron belongs to multiple classes — this is expected
 - `weight` is a minimum threshold on the `r.weight[0]` property in the Neo4j graph (synapse count per connection)
