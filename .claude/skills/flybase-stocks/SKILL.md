@@ -179,6 +179,18 @@ After presenting results, offer relevant follow-ups:
 
 ---
 
+## Testing
+
+Integration tests live in `tests/` and run against the live FlyBase Chado database using pytest:
+
+```bash
+.venv/bin/python -m pytest .claude/skills/flybase-stocks/tests/ -v --rootdir=.claude/skills/flybase-stocks
+```
+
+**After any change to the scripts or queries in this skill**, ask the user whether they'd like you to run the test suite before considering the change complete.
+
+---
+
 ## Notes
 
 - The seven stock collections in FlyBase are: Bloomington Drosophila Stock Center, Kyoto Stock Center, Vienna Drosophila Resource Center, National Drosophila Species Stock Center, FlyORF, Korea Drosophila Resource Center, National Institute of Genetics Fly Stocks
