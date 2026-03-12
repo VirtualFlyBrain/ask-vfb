@@ -142,19 +142,11 @@ Results: 45 stocks across 12 alleles from 3 stock centres
 3. Top 20 rows (sorted by collection, then allele name)
 4. Note that results are truncated
 
-**Stock centre links** — for each stock, provide the catalogue URL:
+**Stock links** — for every stock, use the FlyBase stock report link: `https://flybase.org/reports/{stock_id}`
 
-| Collection | URL pattern |
-|---|---|
-| Bloomington Drosophila Stock Center | `https://bdsc.indiana.edu/stock/{stock_number}` |
-| Kyoto Stock Center | `https://kyotofly.kit.jp/cgi-bin/stocks/search_res_det.cgi?DB_NUM=1&DG_NUM={stock_number}` |
-| Vienna Drosophila Resource Center | `https://stockcenter.vdrc.at/control/product/~VIEW_INDEX~0/~VIEW_SIZE~100/~product_id~{stock_number}` |
+Where `{stock_id}` is the FBst ID (e.g. `FBst0017827`).
 
-Where `{stock_number}` is the value from the `stock_number` / `s.name` column.
-
-For other collections, provide the FlyBase stock report link: `https://flybase.org/reports/{stock_id}`
-
-**Always include a FlyBase report link** for the queried entity:
+**Also include a FlyBase report link** for the queried entity:
 - Gene: `https://flybase.org/reports/{FBgn_ID}`
 - Allele: `https://flybase.org/reports/{FBal_ID}`
 - Stock: `https://flybase.org/reports/{FBst_ID}`
