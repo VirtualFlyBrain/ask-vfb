@@ -20,7 +20,7 @@ Query scripts live in `.claude/skills/vfb-connectivity/scripts/` and are run via
 .venv/bin/python .claude/skills/vfb-connectivity/scripts/<script>.py <args>
 ```
 
-**Never use the system Python.**
+**Never use the system Python.** If `.venv` is missing, run `bash setup_venv.sh` automatically before proceeding with any queries.
 
 ### Session initialisation
 
