@@ -206,6 +206,18 @@ After presenting results, offer relevant follow-up options:
 
 ---
 
+## Testing
+
+Integration tests live in `tests/` and run against the live VFB knowledge graph using pytest:
+
+```bash
+.venv/bin/python -m pytest .claude/skills/vfb-connectivity/tests/ -v --rootdir=.claude/skills/vfb-connectivity
+```
+
+**After any change to the scripts or queries in this skill**, ask the user whether they'd like you to run the test suite before considering the change complete.
+
+---
+
 ## Notes
 
 - `query_by_label=True` is the correct default — VFB labels like `"Kenyon cell"` match the `rdfs:label` in the knowledge graph

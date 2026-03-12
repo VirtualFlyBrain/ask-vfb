@@ -1,5 +1,8 @@
 """Query synaptic connectivity between Drosophila neuron types via VFB."""
 import argparse
+import contextlib
+import io
+import re
 import sys
 
 import pandas as pd
@@ -27,15 +30,28 @@ def main():
 
     vfb = VfbConnect()
 
-    df = vfb.get_connected_neurons_by_type(
-        weight=args.weight,
-        upstream_type=args.upstream,
-        downstream_type=args.downstream,
-        query_by_label=True,
-        group_by_class=args.group_by_class,
-        exclude_dbs=exclude_dbs,
-        return_dataframe=True,
-    )
+    # Capture stdout during the query to detect VFB "Unrecognized value" warnings.
+    # Without this, VFB silently ignores bad labels and returns a one-sided query.
+    captured = io.StringIO()
+    with contextlib.redirect_stdout(captured):
+        df = vfb.get_connected_neurons_by_type(
+            weight=args.weight,
+            upstream_type=args.upstream,
+            downstream_type=args.downstream,
+            query_by_label=True,
+            group_by_class=args.group_by_class,
+            exclude_dbs=exclude_dbs,
+            return_dataframe=True,
+        )
+
+    vfb_output = captured.getvalue()
+    # Strip ANSI escape codes for matching
+    clean_output = re.sub(r"\x1b\[[0-9;]*m", "", vfb_output)
+    unrecognized = re.findall(r"Unrecognized value:\s*(.+)", clean_output)
+    if unrecognized:
+        for val in unrecognized:
+            print(f"ERROR: VFB did not recognise neuron type: {val.strip()}")
+        sys.exit(1)
 
     if isinstance(df, int):
         print("ERROR: query failed (returned error code). Check neuron type labels.")
