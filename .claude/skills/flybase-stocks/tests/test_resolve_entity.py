@@ -57,6 +57,13 @@ class TestIDLookup:
         assert "gene" in stdout
 
     @pytest.mark.integration
+    def test_known_combo_id(self):
+        stdout, _, rc = run_resolve("FBco0001000")
+        assert rc == 0
+        assert "FBco0001000" in stdout
+        assert "split system combination" in stdout
+
+    @pytest.mark.integration
     def test_nonexistent_id(self):
         stdout, _, rc = run_resolve("FBgn9999999999")
         assert rc == 0
@@ -98,6 +105,14 @@ class TestSynonymMatch:
         """The output should include the synonym that matched."""
         stdout, _, _ = run_resolve(KNOWN_SYNONYM)
         assert KNOWN_SYNONYM in stdout
+
+    @pytest.mark.integration
+    def test_combo_synonym_resolves(self):
+        """A combination synonym like MB002B should resolve."""
+        stdout, _, rc = run_resolve("MB002B")
+        assert rc == 0
+        assert "SYNONYM MATCH" in stdout
+        assert "FBco" in stdout
 
 
 # --- Broad match ---

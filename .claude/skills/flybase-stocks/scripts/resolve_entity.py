@@ -30,7 +30,7 @@ def main():
     )
 
     try:
-        if entity.startswith(("FBgn", "FBal", "FBti", "FBst")):
+        if entity.startswith(("FBgn", "FBal", "FBti", "FBst", "FBco")):
             df = run_query(conn, """
                 SELECT f.name, f.uniquename, c.name AS type
                 FROM feature f
@@ -47,7 +47,7 @@ def main():
             JOIN cvterm c ON f.type_id = c.cvterm_id
             WHERE f.is_obsolete = false
               AND c.name IN ('gene', 'allele', 'transposable_element_insertion_site',
-                             'chromosome_structure_variation')
+                             'chromosome_structure_variation', 'split system combination')
               AND f.name = %(name)s
             ORDER BY c.name, f.name
             LIMIT 20
@@ -69,7 +69,8 @@ def main():
             WHERE f.is_obsolete = false
               AND c.name IN ('gene', 'allele',
                              'transposable_element_insertion_site',
-                             'chromosome_structure_variation')
+                             'chromosome_structure_variation',
+                             'split system combination')
               AND syn.name ILIKE %(name)s
             ORDER BY c.name, f.name
             LIMIT 20
@@ -88,7 +89,8 @@ def main():
             WHERE f.is_obsolete = false
               AND c.name IN ('gene', 'allele',
                              'transposable_element_insertion_site',
-                             'chromosome_structure_variation')
+                             'chromosome_structure_variation',
+                             'split system combination')
               AND (f.name ILIKE %(pattern)s)
             ORDER BY c.name, f.name
             LIMIT 20
