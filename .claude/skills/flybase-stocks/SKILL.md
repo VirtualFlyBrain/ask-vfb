@@ -13,18 +13,24 @@ Find available Drosophila fly stocks carrying a given gene, allele, or insertion
 
 ## Setup
 
-All queries use `psql` against the FlyBase public Chado database:
+All Python commands use the `.venv` created by `setup_venv.sh`. If `.venv` is missing, run `bash setup_venv.sh` automatically before proceeding with any queries.
+
+Query scripts live in `.claude/skills/flybase-stocks/scripts/` and are run via:
+
+```bash
+.venv/bin/python .claude/skills/flybase-stocks/scripts/<script>.py <args>
+```
+
+**Never use the system Python.**
+
+### Database connection
+
+All queries connect to the FlyBase public Chado database using `psycopg`:
 
 - **Host:** `chado.flybase.org`
 - **User:** `flybase`
 - **Password:** `flybase`
 - **Database:** `flybase`
-
-Prefix every query with:
-
-```bash
-PGPASSWORD=flybase psql -h chado.flybase.org -U flybase -d flybase -c "..."
-```
 
 ---
 
@@ -51,42 +57,20 @@ Extract from the user's request:
 
 ### Step 2: Resolve the entity
 
-**If a FlyBase ID is provided**, verify it exists:
+Run:
 
-```sql
-SELECT f.name, f.uniquename, c.name AS type
-FROM feature f
-JOIN cvterm c ON f.type_id = c.cvterm_id
-WHERE f.uniquename = '<ID>' AND f.is_obsolete = false;
+```bash
+.venv/bin/python .claude/skills/flybase-stocks/scripts/resolve_entity.py "<entity>"
 ```
 
-**If a name/symbol is provided**, first try an exact match on `feature.name`:
+The script tries three progressively broader searches:
+1. **Exact match** on `feature.name`
+2. **Synonym match** via the `synonym` table (case-insensitive)
+3. **Broad match** with `ILIKE '%<name>%'`
 
-```sql
-SELECT DISTINCT f.name, f.uniquename, c.name AS type
-FROM feature f
-JOIN cvterm c ON f.type_id = c.cvterm_id
-WHERE f.is_obsolete = false
-  AND c.name IN ('gene', 'allele', 'transposable_element_insertion_site', 'chromosome_structure_variation')
-  AND f.name = '<name>'
-ORDER BY c.name, f.name
-LIMIT 20;
-```
+For FlyBase IDs (FBgn/FBal/FBti/FBst), it verifies the ID exists directly.
 
-**If no exact match is found**, fall back to a synonym search:
-
-```sql
-SELECT DISTINCT f.name, f.uniquename, c.name AS type, syn.name AS matched_synonym
-FROM feature f
-JOIN cvterm c ON f.type_id = c.cvterm_id
-JOIN feature_synonym fs ON f.feature_id = fs.feature_id
-JOIN synonym syn ON fs.synonym_id = syn.synonym_id
-WHERE f.is_obsolete = false
-  AND c.name IN ('gene', 'allele', 'transposable_element_insertion_site', 'chromosome_structure_variation')
-  AND syn.name ILIKE '<name>'
-ORDER BY c.name, f.name
-LIMIT 20;
-```
+Output is prefixed with the match type: `EXACT MATCH`, `SYNONYM MATCH`, `BROAD MATCH`, or `NOT FOUND`.
 
 **Important: when a match is found via synonym** (i.e. the user's input does not match `f.name` exactly), always confirm with the user before proceeding. Show them the resolved current symbol and ask them to confirm. For example:
 
@@ -96,227 +80,38 @@ Only proceed to Step 3 after the user confirms. **STOP and wait for the user's r
 
 **If multiple matches are found** (whether by exact name or synonym), show a disambiguation list with name, ID, type (and matched synonym if applicable), and ask the user to confirm which one. **STOP and wait for the user's reply.**
 
-**If no match is found** by either exact name or synonym, try a broader search with `ILIKE '%<name>%'` on both `f.name` and `syn.name`. Show results and ask the user to pick one. **STOP and wait for the user's reply.**
+**If no match is found** by any method, report to the user and suggest checking spelling or using a FlyBase ID.
 
 ---
 
 ### Step 3: Find stocks
 
-The query depends on the feature type identified in Step 2.
+Run:
 
-**For a gene (FBgn)** — find all associated stocks via four paths:
-
-Stocks in FlyBase connect to genes through multiple routes. The following UNION query covers all four paths and matches the results shown on the FlyBase website hitlist (`/hitlist/<FBgn>/to/FBst`):
-
-1. **Direct allele path**: gene → allele (alleleof) → feature_genotype → genotype → stock
-2. **Allele→construct→insertion path**: gene → allele → transgenic_transposable_element (FBtp) → insertion (FBti, via producedby) → feature_genotype → genotype → stock
-3. **Allele→insertion path**: gene → allele → insertion (via associated_with; includes `transposable_element_insertion_site`, `insertion_site`, and `insertion` types) → feature_genotype → genotype → stock
-4. **Regulatory region path**: gene → regulatory_region (associated_with) → allele (has_reg_region) → FBtp → FBti → feature_genotype → genotype → stock
-
-```sql
-WITH all_stocks AS (
-  -- Path 1: gene -> allele -> genotype -> stock (direct)
-  SELECT DISTINCT s.uniquename AS stock_id, s.name AS stock_number,
-         g.uniquename AS genotype, sc.uniquename AS collection
-  FROM feature gene
-  JOIN feature_relationship fr ON gene.feature_id = fr.object_id
-  JOIN cvterm frt ON fr.type_id = frt.cvterm_id AND frt.name = 'alleleof'
-  JOIN feature a ON fr.subject_id = a.feature_id AND a.is_obsolete = false
-  JOIN feature_genotype fg ON a.feature_id = fg.feature_id
-  JOIN genotype g ON fg.genotype_id = g.genotype_id
-  JOIN stock_genotype sg ON g.genotype_id = sg.genotype_id
-  JOIN stock s ON sg.stock_id = s.stock_id AND s.is_obsolete = false
-  LEFT JOIN stockcollection_stock scs ON s.stock_id = scs.stock_id
-  LEFT JOIN stockcollection sc ON scs.stockcollection_id = sc.stockcollection_id
-  WHERE gene.uniquename = '<FBgn_ID>'
-
-  UNION
-
-  -- Path 2: gene -> allele -> FBtp (construct) -> FBti (insertion) -> genotype -> stock
-  SELECT DISTINCT s.uniquename, s.name, g.uniquename, sc.uniquename
-  FROM feature gene
-  JOIN feature_relationship fr1 ON gene.feature_id = fr1.object_id
-  JOIN cvterm c1 ON fr1.type_id = c1.cvterm_id AND c1.name = 'alleleof'
-  JOIN feature a ON fr1.subject_id = a.feature_id AND a.is_obsolete = false
-  JOIN feature_relationship fr2 ON a.feature_id = fr2.subject_id
-  JOIN feature tp ON fr2.object_id = tp.feature_id
-  JOIN cvterm ctp ON tp.type_id = ctp.cvterm_id
-    AND ctp.name = 'transgenic_transposable_element'
-  JOIN feature_relationship fr3 ON tp.feature_id = fr3.object_id
-  JOIN cvterm c3 ON fr3.type_id = c3.cvterm_id AND c3.name = 'producedby'
-  JOIN feature ti ON fr3.subject_id = ti.feature_id AND ti.is_obsolete = false
-  JOIN feature_genotype fg ON ti.feature_id = fg.feature_id
-  JOIN genotype g ON fg.genotype_id = g.genotype_id
-  JOIN stock_genotype sg ON g.genotype_id = sg.genotype_id
-  JOIN stock s ON sg.stock_id = s.stock_id AND s.is_obsolete = false
-  LEFT JOIN stockcollection_stock scs ON s.stock_id = scs.stock_id
-  LEFT JOIN stockcollection sc ON scs.stockcollection_id = sc.stockcollection_id
-  WHERE gene.uniquename = '<FBgn_ID>'
-
-  UNION
-
-  -- Path 3: gene -> allele -> associated_with FBti (insertion) -> genotype -> stock
-  SELECT DISTINCT s.uniquename, s.name, g.uniquename, sc.uniquename
-  FROM feature gene
-  JOIN feature_relationship fr1 ON gene.feature_id = fr1.object_id
-  JOIN cvterm c1 ON fr1.type_id = c1.cvterm_id AND c1.name = 'alleleof'
-  JOIN feature a ON fr1.subject_id = a.feature_id AND a.is_obsolete = false
-  JOIN feature_relationship fr2 ON a.feature_id = fr2.subject_id
-  JOIN cvterm c2 ON fr2.type_id = c2.cvterm_id AND c2.name = 'associated_with'
-  JOIN feature ti ON fr2.object_id = ti.feature_id AND ti.is_obsolete = false
-  JOIN cvterm cti ON ti.type_id = cti.cvterm_id
-    AND cti.name IN ('transposable_element_insertion_site', 'insertion_site', 'insertion')
-  JOIN feature_genotype fg ON ti.feature_id = fg.feature_id
-  JOIN genotype g ON fg.genotype_id = g.genotype_id
-  JOIN stock_genotype sg ON g.genotype_id = sg.genotype_id
-  JOIN stock s ON sg.stock_id = s.stock_id AND s.is_obsolete = false
-  LEFT JOIN stockcollection_stock scs ON s.stock_id = scs.stock_id
-  LEFT JOIN stockcollection sc ON scs.stockcollection_id = sc.stockcollection_id
-  WHERE gene.uniquename = '<FBgn_ID>'
-
-  UNION
-
-  -- Path 4: gene -> regulatory_region -> allele (of other gene) -> FBtp -> FBti -> genotype -> stock
-  SELECT DISTINCT s.uniquename, s.name, g.uniquename, sc.uniquename
-  FROM feature gene
-  JOIN feature_relationship fr1 ON gene.feature_id = fr1.object_id
-  JOIN cvterm c1 ON fr1.type_id = c1.cvterm_id AND c1.name = 'associated_with'
-  JOIN feature rr ON fr1.subject_id = rr.feature_id
-  JOIN cvterm ctr ON rr.type_id = ctr.cvterm_id AND ctr.name = 'regulatory_region'
-  JOIN feature_relationship fr2 ON rr.feature_id = fr2.object_id
-  JOIN cvterm c2 ON fr2.type_id = c2.cvterm_id AND c2.name = 'has_reg_region'
-  JOIN feature a ON fr2.subject_id = a.feature_id AND a.is_obsolete = false
-  JOIN feature_relationship fr3 ON a.feature_id = fr3.subject_id
-  JOIN feature tp ON fr3.object_id = tp.feature_id
-  JOIN cvterm ctp ON tp.type_id = ctp.cvterm_id
-    AND ctp.name = 'transgenic_transposable_element'
-  JOIN feature_relationship fr4 ON tp.feature_id = fr4.object_id
-  JOIN cvterm c4 ON fr4.type_id = c4.cvterm_id AND c4.name = 'producedby'
-  JOIN feature ti ON fr4.subject_id = ti.feature_id AND ti.is_obsolete = false
-  JOIN feature_genotype fg ON ti.feature_id = fg.feature_id
-  JOIN genotype g ON fg.genotype_id = g.genotype_id
-  JOIN stock_genotype sg ON g.genotype_id = sg.genotype_id
-  JOIN stock s ON sg.stock_id = s.stock_id AND s.is_obsolete = false
-  LEFT JOIN stockcollection_stock scs ON s.stock_id = scs.stock_id
-  LEFT JOIN stockcollection sc ON scs.stockcollection_id = sc.stockcollection_id
-  WHERE gene.uniquename = '<FBgn_ID>'
-)
-SELECT stock_id, stock_number, genotype, collection
-FROM all_stocks
-ORDER BY collection, stock_number;
+```bash
+.venv/bin/python .claude/skills/flybase-stocks/scripts/find_stocks.py <FBxx_ID> [collection_filter]
 ```
 
-**For an allele (FBal)** — find stocks via three paths:
+The script automatically selects the correct query based on the ID prefix:
 
-Some alleles have no direct `feature_genotype` entries but connect to stocks through associated insertions or constructs. Use a UNION to cover all paths:
+- **FBgn** (gene) — finds stocks via four UNION paths:
+  1. **Direct allele path**: gene → allele (alleleof) → feature_genotype → genotype → stock
+  2. **Allele→construct→insertion path**: gene → allele → FBtp → FBti (producedby) → genotype → stock
+  3. **Allele→insertion path**: gene → allele → insertion (associated_with) → genotype → stock
+  4. **Regulatory region path**: gene → regulatory_region → allele → FBtp → FBti → genotype → stock
 
-1. **Direct**: allele → feature_genotype → genotype → stock
-2. **Via construct→insertion**: allele → FBtp (transgenic_transposable_element) → FBti (insertion, producedby) → feature_genotype → genotype → stock
-3. **Via associated insertion**: allele → insertion (associated_with) → feature_genotype → genotype → stock
+- **FBal** (allele) — finds stocks via three UNION paths:
+  1. **Direct**: allele → feature_genotype → genotype → stock
+  2. **Via construct→insertion**: allele → FBtp → FBti (producedby) → genotype → stock
+  3. **Via associated insertion**: allele → insertion (associated_with) → genotype → stock
 
-```sql
-WITH all_stocks AS (
-  -- Path 1: allele -> genotype -> stock (direct)
-  SELECT DISTINCT s.uniquename AS stock_id, s.name AS stock_number,
-         g.uniquename AS genotype, sc.uniquename AS collection
-  FROM feature f
-  JOIN feature_genotype fg ON f.feature_id = fg.feature_id
-  JOIN genotype g ON fg.genotype_id = g.genotype_id
-  JOIN stock_genotype sg ON g.genotype_id = sg.genotype_id
-  JOIN stock s ON sg.stock_id = s.stock_id AND s.is_obsolete = false
-  LEFT JOIN stockcollection_stock scs ON s.stock_id = scs.stock_id
-  LEFT JOIN stockcollection sc ON scs.stockcollection_id = sc.stockcollection_id
-  WHERE f.uniquename = '<FBal_ID>' AND f.is_obsolete = false
+- **FBti** (insertion/aberration) — finds stocks directly via feature_genotype → genotype → stock
 
-  UNION
+- **FBst** (stock ID) — looks up stock details directly
 
-  -- Path 2: allele -> FBtp (construct) -> FBti (insertion) -> genotype -> stock
-  SELECT DISTINCT s.uniquename, s.name, g.uniquename, sc.uniquename
-  FROM feature f
-  JOIN feature_relationship fr1 ON f.feature_id = fr1.subject_id
-  JOIN feature tp ON fr1.object_id = tp.feature_id
-  JOIN cvterm ctp ON tp.type_id = ctp.cvterm_id
-    AND ctp.name = 'transgenic_transposable_element'
-  JOIN feature_relationship fr2 ON tp.feature_id = fr2.object_id
-  JOIN cvterm c2 ON fr2.type_id = c2.cvterm_id AND c2.name = 'producedby'
-  JOIN feature ti ON fr2.subject_id = ti.feature_id AND ti.is_obsolete = false
-  JOIN feature_genotype fg ON ti.feature_id = fg.feature_id
-  JOIN genotype g ON fg.genotype_id = g.genotype_id
-  JOIN stock_genotype sg ON g.genotype_id = sg.genotype_id
-  JOIN stock s ON sg.stock_id = s.stock_id AND s.is_obsolete = false
-  LEFT JOIN stockcollection_stock scs ON s.stock_id = scs.stock_id
-  LEFT JOIN stockcollection sc ON scs.stockcollection_id = sc.stockcollection_id
-  WHERE f.uniquename = '<FBal_ID>' AND f.is_obsolete = false
+The optional `collection_filter` argument filters by stock collection name (e.g. "Bloomington", "Kyoto", "VDRC").
 
-  UNION
-
-  -- Path 3: allele -> associated_with insertion -> genotype -> stock
-  SELECT DISTINCT s.uniquename, s.name, g.uniquename, sc.uniquename
-  FROM feature f
-  JOIN feature_relationship fr1 ON f.feature_id = fr1.subject_id
-  JOIN cvterm c1 ON fr1.type_id = c1.cvterm_id AND c1.name = 'associated_with'
-  JOIN feature ti ON fr1.object_id = ti.feature_id AND ti.is_obsolete = false
-  JOIN cvterm cti ON ti.type_id = cti.cvterm_id
-    AND cti.name IN ('transposable_element_insertion_site', 'insertion_site', 'insertion')
-  JOIN feature_genotype fg ON ti.feature_id = fg.feature_id
-  JOIN genotype g ON fg.genotype_id = g.genotype_id
-  JOIN stock_genotype sg ON g.genotype_id = sg.genotype_id
-  JOIN stock s ON sg.stock_id = s.stock_id AND s.is_obsolete = false
-  LEFT JOIN stockcollection_stock scs ON s.stock_id = scs.stock_id
-  LEFT JOIN stockcollection sc ON scs.stockcollection_id = sc.stockcollection_id
-  WHERE f.uniquename = '<FBal_ID>' AND f.is_obsolete = false
-)
-SELECT stock_id, stock_number, genotype, collection
-FROM all_stocks
-ORDER BY collection, stock_number;
-```
-
-**For an insertion (FBti) or chromosome aberration** — find stocks directly:
-
-```sql
-SELECT DISTINCT
-    f.name AS feature_name,
-    f.uniquename AS feature_id,
-    s.name AS stock_number,
-    s.uniquename AS stock_id,
-    g.uniquename AS genotype,
-    sc.uniquename AS collection
-FROM feature f
-JOIN feature_genotype fg ON f.feature_id = fg.feature_id
-JOIN genotype g ON fg.genotype_id = g.genotype_id
-JOIN stock_genotype sg ON g.genotype_id = sg.genotype_id
-JOIN stock s ON sg.stock_id = s.stock_id
-LEFT JOIN stockcollection_stock scs ON s.stock_id = scs.stock_id
-LEFT JOIN stockcollection sc ON scs.stockcollection_id = sc.stockcollection_id
-WHERE f.uniquename = '<feature_ID>'
-  AND f.is_obsolete = false
-  AND s.is_obsolete = false
-ORDER BY sc.uniquename, s.name;
-```
-
-**If the user specified a stock collection filter**, append to the WHERE clause:
-
-```sql
-AND sc.uniquename ILIKE '%<collection_filter>%'
-```
-
-**For a stock ID (FBst)** — look up stock details directly:
-
-```sql
-SELECT
-    s.name AS stock_number,
-    s.uniquename AS stock_id,
-    s.description,
-    sc.uniquename AS collection,
-    g.uniquename AS genotype
-FROM stock s
-LEFT JOIN stockcollection_stock scs ON s.stock_id = scs.stock_id
-LEFT JOIN stockcollection sc ON scs.stockcollection_id = sc.stockcollection_id
-LEFT JOIN stock_genotype sg ON s.stock_id = sg.stock_id
-LEFT JOIN genotype g ON sg.genotype_id = g.genotype_id
-WHERE s.uniquename = '<FBst_ID>'
-  AND s.is_obsolete = false;
-```
+Timeouts are set automatically: 120s for gene queries, 60s for allele/insertion queries.
 
 ---
 
@@ -375,7 +170,8 @@ After presenting results, offer relevant follow-ups:
 
 | Situation | Behaviour |
 |---|---|
-| `psql` not installed | Tell user to install PostgreSQL client: `brew install libpq` |
+| `.venv` not found | Run `bash setup_venv.sh` automatically |
+| `psycopg` import error | Run `bash setup_venv.sh` to install dependencies |
 | Connection timeout | Retry once; if it fails again, report that `chado.flybase.org` may be temporarily unavailable |
 | Feature not found | Try broader ILIKE search; suggest checking spelling or using a FlyBase ID |
 | No stocks found | Report that no stocks are currently available for this entity in FlyBase; suggest checking FlyBase directly |
@@ -400,5 +196,7 @@ After presenting results, offer relevant follow-ups:
 - Stock collections are linked via `stockcollection_stock` (not `stock_stockcollection`)
 - The `stock.name` field contains the stock centre catalogue number (e.g. "7144" for BDSC #7144)
 - The `genotype.uniquename` field contains the human-readable genotype string (e.g. `Df(2L)BSC37, dpp[EP2232]/CyO`)
-- The gene UNION query joins four paths and can be slow for broadly-used genes; set a 120-second timeout on psql commands for gene queries
-- For allele/insertion queries (single path), a 60-second timeout is sufficient
+- The gene UNION query joins four paths and can be slow for broadly-used genes; `statement_timeout=120000` (120s) for gene queries
+- For allele/insertion queries (single path), `statement_timeout=60000` (60s) is sufficient
+- All queries use parameterised queries to prevent SQL injection
+- Scripts use `psycopg` cursors directly (not `pd.read_sql_query`) to avoid SQLAlchemy compatibility warnings
