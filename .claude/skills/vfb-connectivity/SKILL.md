@@ -12,21 +12,25 @@ Query synaptic connections between Drosophila neuron types using `vfb_connect.ge
 
 ## Setup
 
-All Python commands use the `.venv` created by `setup_venv.sh`. Always prefix Python execution with:
+All Python commands use the `.venv` created by `setup_venv.sh`. If `.venv` is missing, run `bash setup_venv.sh` automatically before proceeding.
+
+Query scripts live in `.claude/skills/vfb-connectivity/scripts/` and are run via:
 
 ```bash
-source .venv/bin/activate && python - <<'EOF'
-...code...
-EOF
-```
-
-Or equivalently use `.venv/bin/python` directly:
-
-```bash
-.venv/bin/python -c "..."
+.venv/bin/python .claude/skills/vfb-connectivity/scripts/<script>.py <args>
 ```
 
 **Never use the system Python.** If `.venv` is missing, run `bash setup_venv.sh` automatically before proceeding with any queries.
+
+### Session initialisation
+
+When this skill is first invoked in a new session, fetch the available connectome datasets and cache the result for use throughout the session:
+
+```bash
+.venv/bin/python .claude/skills/vfb-connectivity/scripts/list_datasets.py
+```
+
+This prints each dataset's label and symbol. Use the symbols when constructing `--exclude-dbs` arguments. Present the dataset list to the user when confirming query parameters (Step 1).
 
 ---
 
@@ -40,7 +44,8 @@ Extract from the user's request:
 - **Downstream neuron type**: e.g. `"mushroom body output neuron"`, `"descending neuron"` — the postsynaptic class
 - **Weight threshold**: minimum synapse count per connection (default: `5` if not specified)
 - **Group by class**: whether to aggregate results by neuron class rather than per individual neuron (default: `False`)
-- **Excluded databases**: databases to exclude (default: `['hb', 'fafb']` — excludes Hemibrain and catmaid FAFB)
+- **Data sources**: which connectome datasets to include or exclude. Run the dataset listing script (see Setup) to get the current list of available datasets with their symbols. The user can either specify datasets to **exclude** or datasets to **include** (from which you derive the exclude list). Default: exclude `hb` and `fafb`.
+
 - **Query mode**: infer from user intent:
 
 | Clues | Mode |
@@ -51,7 +56,20 @@ Extract from the user's request:
 | "all connections from X", "what does X connect to" | set `upstream_type` only |
 | "summarise by class", "class level", "aggregated" | `group_by_class=True` |
 
-At least one of `upstream_type` or `downstream_type` must be provided. If neither can be extracted, use `AskUserQuestion` to ask the user.
+At least one of `upstream_type` or `downstream_type` must be provided. If neither can be extracted, ask the user.
+
+**Before running the query**, confirm the parameters with the user. Show them what you plan to use and let them adjust. For example:
+
+> Here's what I'll query:
+> - **Upstream type:** Kenyon cell
+> - **Downstream type:** (any)
+> - **Min. weight:** 5
+> - **Group by class:** No (per-neuron results)
+> - **Excluded DBs:** hb, fafb (Hemibrain & catmaid FAFB excluded)
+>
+> Shall I proceed, or would you like to change any of these?
+
+**STOP and wait for the user's reply.** Only proceed to Step 2 after they confirm. If the user's original request already specifies all parameters explicitly, you may skip confirmation.
 
 ---
 
@@ -69,40 +87,30 @@ If the name is already clearly canonical (e.g. `"GABAergic neuron"`, `"mushroom 
 
 ### Step 3: Execute the query
 
-Run via the `.venv` Python:
+Run:
 
 ```bash
-source .venv/bin/activate && python - <<'EOF'
-import pandas as pd
-from vfb_connect.cross_server_tools import VfbConnect
-
-vfb = VfbConnect()
-
-df = vfb.get_connected_neurons_by_type(
-    weight=5,                        # replace with parsed weight
-    upstream_type="GABAergic neuron",  # replace or set to None
-    downstream_type=None,              # replace or set to None
-    query_by_label=True,
-    group_by_class=False,
-    exclude_dbs=['hb', 'fafb'],
-    return_dataframe=True
-)
-
-if isinstance(df, int):
-    print("ERROR: at least one of upstream_type or downstream_type must be specified")
-elif df is None or (hasattr(df, '__len__') and len(df) == 0):
-    print("No connections found.")
-else:
-    print(f"{len(df)} connections found")
-    print(df.to_string(index=False))
-EOF
+.venv/bin/python .claude/skills/vfb-connectivity/scripts/query_connectivity.py \
+    --upstream "GABAergic neuron" \
+    --downstream "mushroom body output neuron" \
+    --weight 5 \
+    --exclude-dbs hb fafb
 ```
 
-**Parameter notes:**
-- Set unused type to `None` (not an empty string)
-- `query_by_label=True` is always correct when passing neuron class labels
-- `group_by_class=False` returns one row per neuron pair; `group_by_class=True` aggregates by class
-- `exclude_dbs` accepts database `short_form` IDs or symbols; keep defaults unless user asks otherwise
+**Arguments:**
+
+| Argument | Required | Default | Description |
+|---|---|---|---|
+| `--upstream` | At least one of upstream/downstream | `None` | Upstream (presynaptic) neuron type label |
+| `--downstream` | At least one of upstream/downstream | `None` | Downstream (postsynaptic) neuron type label |
+| `--weight` | No | `5` | Minimum synapse count threshold |
+| `--group-by-class` | No | off | Aggregate results by neuron class |
+| `--exclude-dbs` | No | `hb fafb` | Databases to exclude; pass with no values to include all |
+
+**Notes:**
+- Omit `--upstream` or `--downstream` to leave that side unconstrained
+- `--group-by-class` returns one row per class pair; without it, one row per neuron pair
+- `--exclude-dbs` with no values (just the flag) includes all data sources
 
 ---
 
@@ -171,15 +179,7 @@ Results: 42 connections across 18 upstream neurons → 31 downstream neurons
 
 Then present the result table.
 
-**Save option**: If the user asks to save results, write to `outputs/connectivity_{upstream}_{downstream}_{timestamp}.csv` using:
-
-```python
-import datetime, os
-os.makedirs("outputs", exist_ok=True)
-timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-df.to_csv(f"outputs/connectivity_{timestamp}.csv", index=False)
-print("Saved.")
-```
+**Save option**: If the user asks to save results, write the already-captured DataFrame output directly to a CSV file using the `Write` tool — do **not** re-run the query. Save to `outputs/connectivity_{upstream}_{downstream}_{timestamp}.csv`.
 
 ---
 
@@ -206,9 +206,21 @@ After presenting results, offer relevant follow-up options:
 
 ---
 
+## Testing
+
+Integration tests live in `tests/` and run against the live VFB knowledge graph using pytest:
+
+```bash
+.venv/bin/python -m pytest .claude/skills/vfb-connectivity/tests/ -v --rootdir=.claude/skills/vfb-connectivity
+```
+
+**After any change to the scripts or queries in this skill**, ask the user whether they'd like you to run the test suite before considering the change complete.
+
+---
+
 ## Notes
 
 - `query_by_label=True` is the correct default — VFB labels like `"Kenyon cell"` match the `rdfs:label` in the knowledge graph
-- The `exclude_dbs` default (`['hb', 'fafb']`) removes Hemibrain and catmaid FAFB datasets; pass `[]` to include all sources
+- `exclude_dbs` accepts dataset symbols (from `list_datasets.py`); default is `['hb', 'fafb']` but always confirm with the user. If the user specifies datasets to **include**, derive the exclude list by subtracting from the full dataset list
 - Class labels may be pipe-separated (e.g. `"Kenyon cell|γ Kenyon cell"`) when a neuron belongs to multiple classes — this is expected
 - `weight` is a minimum threshold on the `r.weight[0]` property in the Neo4j graph (synapse count per connection)
