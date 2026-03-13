@@ -172,6 +172,43 @@ class TestStockDetail:
         assert len(lines) > 1  # header + at least one data row
 
 
+# --- Combination → stocks ---
+
+
+class TestCombinationStocks:
+    @pytest.mark.integration
+    def test_known_combination(self):
+        """FBco0001000 should return stocks for its component alleles."""
+        stdout, _, rc = run_find_stocks("FBco0001000")
+        assert rc == 0
+        assert "Components:" in stdout
+        first_count_line = [l for l in stdout.split("\n") if "stocks found" in l][0]
+        count = int(first_count_line.split()[0])
+        assert count > 0
+
+    @pytest.mark.integration
+    def test_combination_lists_components(self):
+        """Output should list the component alleles before the stock table."""
+        stdout, _, rc = run_find_stocks("FBco0001000")
+        assert rc == 0
+        assert "FBal" in stdout
+        assert "component" in stdout.lower()
+
+    @pytest.mark.integration
+    def test_combination_has_stock_ids(self):
+        """Output should contain FBst stock IDs."""
+        stdout, _, rc = run_find_stocks("FBco0001000")
+        assert rc == 0
+        assert "FBst" in stdout
+
+    @pytest.mark.integration
+    def test_nonexistent_combination(self):
+        """A nonexistent FBco should return 0 stocks."""
+        stdout, _, rc = run_find_stocks("FBco9999999")
+        assert rc == 0
+        assert "0 stocks found" in stdout or "No component alleles" in stdout
+
+
 # --- Edge cases ---
 
 

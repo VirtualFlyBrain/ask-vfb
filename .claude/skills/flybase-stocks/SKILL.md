@@ -1,13 +1,13 @@
 ---
 name: flybase-stocks
-description: Find fly stocks for genes, alleles, or insertions by querying FlyBase public Chado database
+description: Find fly stocks for genes, alleles, insertions, or split system combinations by querying FlyBase public Chado database
 user-invocable: true
-argument-hint: "<gene, allele, or insertion name or FBgn/FBal/FBti ID>"
+argument-hint: "<gene, allele, insertion, or combination name or FBgn/FBal/FBti/FBco ID>"
 ---
 
 # FlyBase Stock Finder
 
-Find available Drosophila fly stocks carrying a given gene, allele, or insertion by querying the FlyBase public Chado (PostgreSQL) database.
+Find available Drosophila fly stocks carrying a given gene, allele, insertion, or split system combination by querying the FlyBase public Chado (PostgreSQL) database.
 
 ---
 
@@ -46,7 +46,7 @@ All queries connect to the FlyBase public Chado database using `psycopg`:
 
 Extract from the user's request:
 
-- **Entity**: a gene name (e.g. `dpp`), allele symbol (e.g. `dpp[H46]`), insertion symbol (e.g. `P{GAL4-da.G32}UH1`), or FlyBase ID (e.g. `FBgn0000490`, `FBal0003059`, `FBti0002191`)
+- **Entity**: a gene name (e.g. `dpp`), allele symbol (e.g. `dpp[H46]`), insertion symbol (e.g. `P{GAL4-da.G32}UH1`), combination synonym (e.g. `MB002B`), or FlyBase ID (e.g. `FBgn0000490`, `FBal0003059`, `FBti0002191`, `FBco0001000`)
 - **Collection filter** (optional): a specific stock centre to filter by (e.g. "Bloomington", "Kyoto", "VDRC")
 - **Search mode**: infer from the entity format:
 
@@ -55,6 +55,7 @@ Extract from the user's request:
 | `FBgn\d+` | Gene ID — find stocks via alleles of this gene |
 | `FBal\d+` | Allele ID — find stocks directly |
 | `FBti\d+` | Insertion ID — find stocks directly |
+| `FBco\d+` | Combination ID — find stocks via component alleles |
 | `FBst\d+` | Stock ID — look up stock details directly |
 | Name containing `[` or `{` | Likely allele or insertion symbol — search by name |
 | Plain name (e.g. `dpp`, `white`) | Gene symbol — find gene then stocks via alleles |
@@ -74,7 +75,7 @@ The script tries three progressively broader searches:
 2. **Synonym match** via the `synonym` table (case-insensitive)
 3. **Broad match** with `ILIKE '%<name>%'`
 
-For FlyBase IDs (FBgn/FBal/FBti/FBst), it verifies the ID exists directly.
+For FlyBase IDs (FBgn/FBal/FBti/FBst/FBco), it verifies the ID exists directly.
 
 Output is prefixed with the match type: `EXACT MATCH`, `SYNONYM MATCH`, `BROAD MATCH`, or `NOT FOUND`.
 
@@ -113,6 +114,8 @@ The script automatically selects the correct query based on the ID prefix:
 
 - **FBti** (insertion/aberration) — finds stocks directly via feature_genotype → genotype → stock
 
+- **FBco** (split system combination) — resolves component alleles via `partially_produced_by`, then finds stocks for each component using the allele query paths. Output includes a `component` column indicating which hemidriver allele each stock carries. Stocks carrying both components (the pre-combined line) will appear once.
+
 - **FBst** (stock ID) — looks up stock details directly
 
 The optional `collection_filter` argument filters by stock collection name (e.g. "Bloomington", "Kyoto", "VDRC").
@@ -150,6 +153,7 @@ Where `{stock_id}` is the FBst ID (e.g. `FBst0017827`).
 - Gene: `https://flybase.org/reports/{FBgn_ID}`
 - Allele: `https://flybase.org/reports/{FBal_ID}`
 - Stock: `https://flybase.org/reports/{FBst_ID}`
+- Combination: `https://flybase.org/reports/{FBco_ID}`
 
 ---
 
@@ -203,6 +207,7 @@ Integration tests live in `tests/` and run against the live FlyBase Chado databa
   2. Via construct: `allele → FBtp → FBti (producedby) → feature_genotype → genotype → stock`
   3. Via associated insertion: `allele → insertion (associated_with) → feature_genotype → genotype → stock`
 - Insertion/aberration-to-stock path: `feature → feature_genotype → genotype → stock_genotype → stock`
+- Combination-to-stock path: `combination → (partially_produced_by) → component alleles → [allele stock paths]`
 - Stock collections are linked via `stockcollection_stock` (not `stock_stockcollection`)
 - The `stock.name` field contains the stock centre catalogue number (e.g. "7144" for BDSC #7144)
 - The `genotype.uniquename` field contains the human-readable genotype string (e.g. `Df(2L)BSC37, dpp[EP2232]/CyO`)

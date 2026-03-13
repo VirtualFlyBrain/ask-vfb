@@ -210,6 +210,51 @@ WHERE f.uniquename = %(feature_id)s
     return run_query(conn, query, params)
 
 
+def find_stocks_combination(conn, combo_id, collection_filter=None):
+    """Find stocks for a split system combination via its component alleles.
+
+    First resolves component alleles via partially_produced_by, then finds
+    stocks for each component using the allele query paths. An extra column
+    'component' indicates which allele the stock carries.
+    """
+    # Step 1: get component alleles
+    components = run_query(conn, """
+        SELECT a.name AS allele_name, a.uniquename AS allele_id
+        FROM feature combo
+        JOIN feature_relationship fr ON combo.feature_id = fr.subject_id
+        JOIN cvterm c ON fr.type_id = c.cvterm_id AND c.name = 'partially_produced_by'
+        JOIN feature a ON fr.object_id = a.feature_id AND a.is_obsolete = false
+        WHERE combo.uniquename = %(combo_id)s
+          AND combo.is_obsolete = false
+        ORDER BY a.uniquename
+    """, {"combo_id": combo_id})
+
+    if components.empty:
+        print("No component alleles found for " + combo_id)
+        return pd.DataFrame()
+
+    print("Components:")
+    for _, row in components.iterrows():
+        print("  " + row["allele_name"] + " (" + row["allele_id"] + ")")
+    print()
+
+    # Step 2: find stocks for each component
+    frames = []
+    for _, row in components.iterrows():
+        df = find_stocks_allele(conn, row["allele_id"], collection_filter)
+        if not df.empty:
+            df["component"] = row["allele_name"]
+            df["component_id"] = row["allele_id"]
+            frames.append(df)
+
+    if not frames:
+        return pd.DataFrame()
+
+    return pd.concat(frames, ignore_index=True).drop_duplicates(
+        subset=["stock_id"]
+    ).sort_values(["collection", "stock_number"]).reset_index(drop=True)
+
+
 def find_stock_details(conn, stock_id):
     """Look up details for a specific stock ID."""
     return run_query(conn, """
@@ -231,7 +276,7 @@ def find_stock_details(conn, stock_id):
 
 def main():
     if len(sys.argv) < 2:
-        print("Usage: find_stocks.py <FBgn/FBal/FBti/FBst_ID> [collection_filter]")
+        print("Usage: find_stocks.py <FBgn/FBal/FBti/FBst/FBco_ID> [collection_filter]")
         sys.exit(1)
 
     feature_id = sys.argv[1]
@@ -258,10 +303,12 @@ def main():
             df = find_stocks_allele(conn, feature_id, collection_filter)
         elif feature_id.startswith("FBti"):
             df = find_stocks_insertion(conn, feature_id, collection_filter)
+        elif feature_id.startswith("FBco"):
+            df = find_stocks_combination(conn, feature_id, collection_filter)
         elif feature_id.startswith("FBst"):
             df = find_stock_details(conn, feature_id)
         else:
-            print("ERROR: Unrecognised ID prefix. Expected FBgn, FBal, FBti, or FBst.")
+            print("ERROR: Unrecognised ID prefix. Expected FBgn, FBal, FBti, FBst, or FBco.")
             sys.exit(1)
 
         print(str(len(df)) + " stocks found")
