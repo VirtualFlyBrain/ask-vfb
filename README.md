@@ -60,7 +60,17 @@ git clone https://github.com/your-org/ask-vfb.git
 cd ask-vfb
 ```
 
-### 2. Create the Python virtual environment
+### 2. Easy install for Claude Code (recommended)
+
+This repo is already configured as a Claude Code “skills” workspace. To install the skills globally so they are available from any Claude Code workspace, run:
+
+```bash
+./install_claude_skills.sh
+```
+
+> If the script is not executable, run: `chmod +x install_claude_skills.sh`
+
+### 3. Create the Python virtual environment
 
 ```bash
 bash setup_venv.sh
