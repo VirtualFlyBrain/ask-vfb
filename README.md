@@ -8,29 +8,29 @@ Ask questions about neurons, neuroanatomy, synaptic connectivity, gene expressio
 
 ## What can ask-vfb do?
 
-### Neuron and anatomy lookup
-> *"What is MBON-γ3?"*
-> *"Show me term info for the mushroom body"*
-> *"Find all GABAergic neurons in VFB with images"*
+### Look up neuron details, image, connecitivy, literature, split drivers, gene expression (from tanscriptomics)
+> *"Tell me about MBON-γ3?"*
+  * Retrieves term info (description, classification, relationships) from the VFB knowledge graph and hyperlinks all results to the VFB browser.
+> *"Show me thumbnails for 5 MBON-γ3 neurons"*
+  * Fetches neuron morphology thumbnails from VFB and produces markdown reports with embedded images and 3D browser links.
+> *"Find split combinations that target MBON-γ3"
+> *"Find all types of GABAergic neurons upstream of MBON-γ3"*
+> *"Find papers describing these neurons and extract details of their structure and function."* 
 
-Retrieves term info (description, classification, relationships) from the VFB knowledge graph and hyperlinks all results to the VFB browser.
 
-### Image reports
-> *"Show me thumbnails for 5 MBON neurons"*
-> *"Make a markdown report with images of Kenyon cells"*
 
-Fetches neuron morphology thumbnails from VFB and produces markdown reports with embedded images and 3D browser links.
+
+
 
 ### Synaptic connectivity (`/vfb-connectivity`)
 > *"What are the downstream targets of Kenyon cells with weight ≥ 10?"*
 > *"Show class-level connectivity from DANs to MBONs"*
-> *"What inputs does the mushroom body output neuron receive?"*
+> *"What inputs do the mushroom body output neurons receive?"*
 
 Queries the VFB connectomics graph via `vfb-connect` for upstream/downstream partners, synapse weights, and class-level aggregations. Supports filtering by weight threshold and database source.
 
-### Ontology queries
-> *"What is the FBbt term for the mushroom body calyx?"*
-> *"Show me subclasses of sensory neuron"*
+#
+
 
 Searches and traverses the Drosophila anatomy ontology (FBbt) and other OBO ontologies via the OLS4 MCP.
 
@@ -48,10 +48,13 @@ Searches Europe PMC and retrieves full-text content or PDF-converted markdown fo
 
 - [Claude Code](https://github.com/anthropics/claude-code) (CLI)
 - Python 3.9–3.13
+- **Node.js / npm** — required for the Playwright MCP (web site interaction) and artl-mcp (literature retrieval). Install from [nodejs.org](https://nodejs.org/). The setup script will warn if Node.js is not found.
 - The following MCP servers configured in your Claude Code settings:
   - `virtual-fly-brain`
   - `artl-mcp`
   - `ols4`
+  - `playwright` (optional — for web browsing)
+  - `Asta_semanticscholar` (optional — for Semantic Scholar literature search; requires API key, see below)
 
 ### 1. Clone the repo
 
@@ -70,17 +73,37 @@ This auto-detects your highest available Python (3.9–3.13), creates `.venv/`, 
 - `vfb-connect` — VFB Python client for connectomics queries
 - `psycopg` — PostgreSQL adapter
 
-### 3. Configure MCP servers
+### 3. Set up environment variables
+
+Copy the example environment file and add your API keys:
+
+```bash
+cp .env.example .env
+```
+
+Edit `.env` to add your keys. Currently the only key required is for the **ASTA Semantic Scholar MCP**:
+
+```
+ASTA_API_KEY=your_api_key_here
+```
+
+> **What is ASTA?** ASTA is the Semantic Scholar API Tools service from the Allen Institute for AI. It provides structured search over the academic literature — paper search by relevance/title, citation graphs, author lookup, and snippet-level semantic search. Details and API key applications: [semanticscholar.org/product/api](https://www.semanticscholar.org/product/api#api-key)
+
+The `.env` file is listed in `.gitignore` and will **not** be committed to the repository. The setup script (`setup_venv.sh`) automatically loads variables from `.env` when it runs.
+
+### 4. Configure MCP servers
 
 Ensure the following MCP servers are registered in your Claude Code MCP settings (`~/.claude/mcp_settings.json` or equivalent):
 
-| Server name | Purpose |
-|---|---|
-| `virtual-fly-brain` | Neuron/anatomy search, term info, connectivity |
-| `artl-mcp` | Europe PMC literature retrieval |
-| `ols4` | OBO ontology search and traversal |
+| Server name | Purpose | Requires |
+|---|---|---|
+| `virtual-fly-brain` | Neuron/anatomy search, term info, connectivity | — (remote HTTP) |
+| `artl-mcp` | Europe PMC literature retrieval | Node.js/npm |
+| `ols4` | OBO ontology search and traversal | — (remote HTTP) |
+| `playwright` | Web site interaction and browsing | Node.js/npm |
+| `Asta_semanticscholar` | Semantic Scholar literature search | `ASTA_API_KEY` in `.env` |
 
-### 4. Open in Claude Code
+### 5. Open in Claude Code
 
 ```bash
 claude
@@ -130,4 +153,5 @@ Results are drawn from:
 | [Virtual Fly Brain](https://virtualflybrain.org) | Neuron morphology, anatomy ontology, connectomics |
 | [FAFB](https://fafb.catmaid.virtualflybrain.org) | Full adult female brain EM (Otto et al. 2020) |
 | [Europe PMC](https://europepmc.org) | Literature and full-text articles |
+| [Semantic Scholar / ASTA](https://www.semanticscholar.org/product/api) | Literature search, citations, snippet search |
 | [OLS4](https://www.ebi.ac.uk/ols4) | OBO ontologies (FBbt, GO, etc.) |

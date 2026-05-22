@@ -29,6 +29,15 @@ echo "Using $($PYTHON --version)"
 
 VENV_DIR="${1:-.venv}"
 
+# Load environment variables from .env if present
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+if [ -f "$SCRIPT_DIR/.env" ]; then
+    echo "Loading environment variables from .env"
+    set -a
+    source "$SCRIPT_DIR/.env"
+    set +a
+fi
+
 $PYTHON -m venv "$VENV_DIR"
 
 # Activate and install dependencies
@@ -36,5 +45,15 @@ source "$VENV_DIR/bin/activate"
 
 pip install --upgrade pip
 pip install -r "$(dirname "$0")/requirements.txt"
+
+# Check for Node.js / npm (required by Playwright MCP and artl-mcp)
+if ! command -v npx &>/dev/null; then
+    echo ""
+    echo "WARNING: Node.js/npm not found."
+    echo "  The following MCP servers require Node.js and will not be available:"
+    echo "    - Playwright MCP (web site interaction)"
+    echo "    - artl-mcp (literature search and retrieval)"
+    echo "  Install Node.js (https://nodejs.org/) to enable these."
+fi
 
 echo "Done. Activate with: source $VENV_DIR/bin/activate"
