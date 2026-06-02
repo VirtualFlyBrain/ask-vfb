@@ -1,4 +1,4 @@
-# Glutamatergic Input to the *Drosophila* Centrifugal Neuron C2 — v2
+# Glutamatergic Input to the *Drosophila* Centrifugal Neuron C2
 
 Cross-referenced VFB scRNAseq, VFB connectomics, and published literature to characterise the glutamatergic input to [centrifugal neuron C2](https://v2.virtualflybrain.org/org.geppetto.frontend/geppetto?id=FBbt_00003743) and to spell out what this means for visual signal processing.
 
