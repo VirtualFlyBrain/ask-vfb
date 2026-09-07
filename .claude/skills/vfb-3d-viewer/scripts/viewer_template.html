@@ -1,0 +1,493 @@
+<title>/*PAGE_TITLE*/</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+  :root{
+    --bg:#080b11;
+    --panel:rgba(17,23,33,0.74);
+    --panel-solid:#111721;
+    --border:rgba(255,255,255,0.10);
+    --border-strong:rgba(255,255,255,0.18);
+    --ink:#eef2f8;
+    --ink-dim:#9aa7ba;
+    --ink-faint:#6b7789;
+    --accent:#4cc9f0;
+    --mono:'IBM Plex Mono',ui-monospace,Menlo,monospace;
+    --sans:'IBM Plex Sans',system-ui,sans-serif;
+    --display:'Archivo','IBM Plex Sans',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:var(--sans);
+    overflow:hidden;
+    -webkit-font-smoothing:antialiased;
+  }
+  #stage{position:fixed;inset:0}
+  canvas{display:block;touch-action:none;width:100%!important;height:100%!important}
+
+  /* ---- header ---- */
+  #header{
+    position:fixed;top:22px;left:24px;z-index:5;
+    pointer-events:none;max-width:min(46ch,60vw);
+  }
+  #header h1{
+    font-family:var(--display);
+    font-weight:800;
+    font-size:clamp(22px,3.4vw,34px);
+    letter-spacing:-0.02em;
+    margin:0;
+    line-height:1.02;
+    text-wrap:balance;
+    text-shadow:0 2px 22px rgba(0,0,0,.55);
+  }
+  #header .sub{
+    margin-top:8px;
+    font-family:var(--mono);
+    font-size:12px;
+    color:var(--ink-dim);
+    letter-spacing:.02em;
+    text-shadow:0 1px 10px rgba(0,0,0,.6);
+  }
+  #header .sub b{color:var(--accent);font-weight:500}
+
+  /* ---- control panel ---- */
+  #panel{
+    position:fixed;top:20px;right:20px;z-index:6;
+    width:270px;
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:15px;
+    backdrop-filter:blur(16px) saturate(1.1);
+    -webkit-backdrop-filter:blur(16px) saturate(1.1);
+    box-shadow:0 18px 50px -18px rgba(0,0,0,.7);
+    overflow:hidden;
+  }
+  .p-sec{padding:13px 15px}
+  .p-sec + .p-sec{border-top:1px solid var(--border)}
+  .p-label{
+    font-family:var(--mono);
+    font-size:10px;
+    text-transform:uppercase;
+    letter-spacing:.14em;
+    color:var(--ink-faint);
+    margin:0 0 10px;
+  }
+  /* neuron rows */
+  .n-row{
+    display:flex;align-items:center;gap:10px;
+    width:100%;
+    padding:7px 8px;margin:2px 0;
+    background:transparent;border:0;border-radius:9px;
+    color:var(--ink);text-align:left;
+    cursor:pointer;font-family:var(--sans);
+    transition:background .15s;
+  }
+  .n-row:hover{background:rgba(255,255,255,.05)}
+  .n-row:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+  .n-row.off{opacity:.4}
+  .sw{
+    width:13px;height:13px;border-radius:4px;flex:0 0 auto;
+    box-shadow:0 0 0 1px rgba(255,255,255,.15) inset, 0 0 10px -1px currentColor;
+    transition:opacity .15s;
+  }
+  .n-row.off .sw{box-shadow:0 0 0 1px rgba(255,255,255,.22) inset;background:transparent!important}
+  .n-txt{min-width:0;line-height:1.25}
+  .n-name{font-size:13px;font-weight:600}
+  .n-meta{font-family:var(--mono);font-size:10.5px;color:var(--ink-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+  /* generic controls */
+  .row{display:flex;align-items:center;gap:8px}
+  .row.between{justify-content:space-between}
+  .btn{
+    font-family:var(--sans);font-size:12px;font-weight:500;
+    color:var(--ink);
+    background:rgba(255,255,255,.06);
+    border:1px solid var(--border);
+    border-radius:8px;padding:7px 10px;cursor:pointer;
+    transition:background .15s,border-color .15s;
+    flex:1 1 auto;
+  }
+  .btn:hover{background:rgba(255,255,255,.12)}
+  .btn:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+  .btn.on{background:var(--accent);border-color:var(--accent);color:#04222c;font-weight:600}
+  .seg{display:flex;gap:6px}
+  input[type=range]{
+    -webkit-appearance:none;appearance:none;width:100%;height:4px;
+    background:rgba(255,255,255,.16);border-radius:3px;outline:none;margin:4px 0 0;
+  }
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none;width:15px;height:15px;border-radius:50%;
+    background:var(--accent);cursor:pointer;box-shadow:0 0 8px -1px var(--accent);
+  }
+  input[type=range]::-moz-range-thumb{
+    width:15px;height:15px;border:0;border-radius:50%;
+    background:var(--accent);cursor:pointer;
+  }
+  .val{font-family:var(--mono);font-size:11px;color:var(--ink-dim);min-width:30px;text-align:right}
+
+  /* footer credit */
+  #credit{
+    position:fixed;left:24px;bottom:18px;z-index:5;
+    font-family:var(--mono);font-size:10.5px;line-height:1.5;
+    color:var(--ink-faint);max-width:52ch;
+    text-shadow:0 1px 8px rgba(0,0,0,.7);
+  }
+  #credit a{color:var(--ink-dim);text-decoration:none;border-bottom:1px solid var(--border-strong)}
+  #credit a:hover{color:var(--accent)}
+
+  /* hint */
+  #hint{
+    position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:5;
+    font-family:var(--mono);font-size:11px;color:var(--ink-faint);
+    background:rgba(8,11,17,.5);padding:5px 12px;border-radius:20px;
+    border:1px solid var(--border);
+    transition:opacity .6s;pointer-events:none;
+  }
+  #loading{
+    position:fixed;inset:0;z-index:10;display:flex;align-items:center;justify-content:center;
+    flex-direction:column;gap:14px;background:var(--bg);
+    font-family:var(--mono);font-size:12px;color:var(--ink-dim);letter-spacing:.05em;
+  }
+  .spin{width:30px;height:30px;border:2px solid rgba(255,255,255,.14);
+    border-top-color:var(--accent);border-radius:50%;animation:sp .9s linear infinite}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  @media (max-width:640px){
+    #panel{top:auto;bottom:14px;right:14px;left:14px;width:auto}
+    #header{top:14px;left:16px;max-width:70vw}
+    #credit,#hint{display:none}
+  }
+  @media (prefers-reduced-motion:reduce){.spin{animation:none}}
+</style>
+
+<div id="stage"></div>
+
+<header id="header">
+  <h1>/*TITLE*/</h1>
+  <div class="sub">/*SUBTITLE*/</div>
+</header>
+
+<aside id="panel">
+  <div class="p-sec">
+    <p class="p-label">Neurons &middot; click to toggle</p>
+    <div id="legend"></div>
+  </div>
+  <div class="p-sec">
+    <div class="row between">
+      <button id="rotBtn" class="btn on" style="flex:0 0 auto">◐ Auto-rotate</button>
+      <button id="resetBtn" class="btn" style="flex:0 0 auto">Reset view</button>
+    </div>
+    <div class="row" style="margin-top:9px">
+      <button id="tmplBtn" class="btn on">◨ VNC template shell</button>
+    </div>
+    <div style="margin-top:11px">
+      <p class="p-label">Backdrop</p>
+      <div class="seg">
+        <button id="bgDark" class="btn on">Dark</button>
+        <button id="bgLight" class="btn">Light</button>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<div id="credit">
+  Data: <a href="https://virtualflybrain.org" target="_blank" rel="noopener">Virtual Fly Brain</a> &middot; CC-BY 4.0<br>
+  /*CREDIT*/
+</div>
+<div id="hint">drag to orbit &middot; scroll to zoom &middot; right-drag to pan</div>
+
+<div id="loading"><div class="spin"></div><div>building neurons…</div></div>
+
+<script id="data" type="application/json">/*NEURON_DATA*/</script>
+<script id="tmpl" type="application/json">/*TMPL_DATA*/</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function(){
+  "use strict";
+  var DATA = JSON.parse(document.getElementById('data').textContent);
+
+  // per-neuron identity: bright color for dark bg, deep color for light bg
+  // colors travel with the data (script assigns dark/light hex per neuron)
+  var PALETTE = DATA.neurons.map(function(n){ return n.color; });
+
+  var reduce = window.matchMedia('(prefers-reduced-motion:reduce)').matches;
+
+  // ---- three basics ----
+  var stage = document.getElementById('stage');
+  var scene = new THREE.Scene();
+  var BG_DARK = 0x080b11, BG_LIGHT = 0xe9edf2;
+  scene.background = new THREE.Color(BG_DARK);
+  scene.fog = new THREE.Fog(BG_DARK, 90, 260);
+
+  var camera = new THREE.PerspectiveCamera(45, 1, 0.1, 2000);
+  var renderer = new THREE.WebGLRenderer({antialias:true, preserveDrawingBuffer:true});
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio||1, 2));
+  renderer.outputEncoding = THREE.sRGBEncoding;
+  stage.appendChild(renderer.domElement);
+
+  // ---- lights (fixed in scene so rotation reveals form) ----
+  scene.add(new THREE.HemisphereLight(0xcfe4ff, 0x0a0f18, 0.55));
+  scene.add(new THREE.AmbientLight(0xffffff, 0.18));
+  var key = new THREE.DirectionalLight(0xffffff, 0.95); key.position.set(60,90,70); scene.add(key);
+  var fill = new THREE.DirectionalLight(0x9fc4ff, 0.45); fill.position.set(-80,-30,-40); scene.add(fill);
+  var rim = new THREE.DirectionalLight(0xffffff, 0.35); rim.position.set(0,-60,90); scene.add(rim);
+
+  // ---- build one merged tube geometry per neuron ----
+  // returns THREE.Group holder; geometry rebuilt when thickness changes
+  var group = new THREE.Group(); scene.add(group);
+  var meshes = [];
+  var extent = 1;
+
+  function buildTubeGeometry(pos, edges, radius, seg){
+    seg = seg||6;
+    var vPer = edges.length/2 * seg * 6; // 6 verts per radial quad
+    var P = new Float32Array(vPer*3);
+    var N = new Float32Array(vPer*3);
+    var o = 0;
+    var ux,uy,uz,vx,vy,vz;
+    for(var e=0;e<edges.length;e+=2){
+      var i=edges[e]*3, j=edges[e+1]*3;
+      var ax=pos[i],ay=pos[i+1],az=pos[i+2];
+      var bx=pos[j],by=pos[j+1],bz=pos[j+2];
+      var dx=bx-ax,dy=by-ay,dz=bz-az;
+      var len=Math.sqrt(dx*dx+dy*dy+dz*dz);
+      if(len<1e-6) continue;
+      dx/=len;dy/=len;dz/=len;
+      // orthonormal frame perpendicular to axis
+      if(Math.abs(dx)<0.9){ux=1;uy=0;uz=0;} else {ux=0;uy=1;uz=0;}
+      // u = normalize(cross(axis,t))
+      var cx=dy*uz-dz*uy, cy=dz*ux-dx*uz, cz=dx*uy-dy*ux;
+      var cl=Math.sqrt(cx*cx+cy*cy+cz*cz); cx/=cl;cy/=cl;cz/=cl;
+      ux=cx;uy=cy;uz=cz;
+      // v = cross(axis,u)
+      vx=dy*uz-dz*uy; vy=dz*ux-dx*uz; vz=dx*uy-dy*ux;
+      for(var s=0;s<seg;s++){
+        var t0=s/seg*6.2831853, t1=(s+1)/seg*6.2831853;
+        var c0=Math.cos(t0),s0=Math.sin(t0),c1=Math.cos(t1),s1=Math.sin(t1);
+        var n0x=ux*c0+vx*s0, n0y=uy*c0+vy*s0, n0z=uz*c0+vz*s0;
+        var n1x=ux*c1+vx*s1, n1y=uy*c1+vy*s1, n1z=uz*c1+vz*s1;
+        var a0x=ax+radius*n0x,a0y=ay+radius*n0y,a0z=az+radius*n0z;
+        var b0x=bx+radius*n0x,b0y=by+radius*n0y,b0z=bz+radius*n0z;
+        var a1x=ax+radius*n1x,a1y=ay+radius*n1y,a1z=az+radius*n1z;
+        var b1x=bx+radius*n1x,b1y=by+radius*n1y,b1z=bz+radius*n1z;
+        // tri 1: a0,b0,b1 | tri 2: a0,b1,a1
+        push(a0x,a0y,a0z,n0x,n0y,n0z); push(b0x,b0y,b0z,n0x,n0y,n0z); push(b1x,b1y,b1z,n1x,n1y,n1z);
+        push(a0x,a0y,a0z,n0x,n0y,n0z); push(b1x,b1y,b1z,n1x,n1y,n1z); push(a1x,a1y,a1z,n1x,n1y,n1z);
+      }
+    }
+    function push(px,py,pz,nx,ny,nz){
+      P[o]=px;P[o+1]=py;P[o+2]=pz;
+      N[o]=nx;N[o+1]=ny;N[o+2]=nz;o+=3;
+    }
+    var g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(P.subarray(0,o),3));
+    g.setAttribute('normal', new THREE.BufferAttribute(N.subarray(0,o),3));
+    return g;
+  }
+
+  // draw each neuron as a skeleton: one LineSegments per edge list
+  function build(){
+    meshes.forEach(function(m){ group.remove(m); m.geometry.dispose(); m.material.dispose(); });
+    meshes = [];
+    DATA.neurons.forEach(function(n, idx){
+      var E = n.edges, pos = n.pos;
+      var arr = new Float32Array(E.length*3), o=0;
+      for(var e=0;e<E.length;e++){ var b=E[e]*3; arr[o++]=pos[b]; arr[o++]=pos[b+1]; arr[o++]=pos[b+2]; }
+      var g = new THREE.BufferGeometry();
+      g.setAttribute('position', new THREE.BufferAttribute(arr,3));
+      var mat = new THREE.LineBasicMaterial({ color:new THREE.Color(PALETTE[idx].dark), transparent:true, opacity:0.95 });
+      var line = new THREE.LineSegments(g, mat);
+      line.userData.idx = idx;
+      group.add(line);
+      meshes.push(line);
+    });
+    applyBg(); // keep colors in sync with current bg
+    syncVisibility();
+  }
+
+  // compute extent from data for framing
+  (function(){
+    var mx=0;
+    DATA.neurons.forEach(function(n){
+      for(var k=0;k<n.pos.length;k++){var a=Math.abs(n.pos[k]); if(a>mx)mx=a;}
+    });
+    extent = mx||50;
+  })();
+
+  build();
+
+  // ---- VNC template shell (translucent, for anatomical context) ----
+  var tmesh = null;
+  (function(){
+    var raw = document.getElementById('tmpl').textContent.trim();
+    if(!raw) return;
+    var T = JSON.parse(raw);
+    function b64(s){ var bin=atob(s), n=bin.length, u=new Uint8Array(n); for(var i=0;i<n;i++)u[i]=bin.charCodeAt(i); return u.buffer; }
+    var g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(b64(T.pos)),3));
+    g.setIndex(new THREE.BufferAttribute(new Uint32Array(b64(T.idx)),1));
+    g.computeVertexNormals();
+    var mat = new THREE.MeshPhongMaterial({
+      color:0x8aa0b8, transparent:true, opacity:0.10,
+      side:THREE.DoubleSide, depthWrite:false, shininess:6, flatShading:false
+    });
+    tmesh = new THREE.Mesh(g, mat);
+    tmesh.renderOrder = -1;
+    scene.add(tmesh);
+  })();
+
+  document.getElementById('loading').remove();
+
+  // ---- frame the scene on the real geometry (axons skew the bbox, so
+  //      aim at the true center and fit the largest dimension) ----
+  scene.updateMatrixWorld(true);
+  var box = new THREE.Box3();
+  meshes.forEach(function(m){ m.geometry.computeBoundingBox(); box.expandByObject(m); });
+  if(tmesh){ tmesh.geometry.computeBoundingBox(); box.expandByObject(tmesh); }
+  var ctr = box.getCenter(new THREE.Vector3());
+  var size = box.getSize(new THREE.Vector3());
+  var maxDim = Math.max(size.x, size.y, size.z) || (extent*2);
+  extent = maxDim;
+  scene.fog.near = maxDim*0.9; scene.fog.far = maxDim*2.8;
+
+  // ---- orbit camera ----
+  var target = ctr.clone();
+  var fitR = (maxDim*0.5) / Math.tan((45*Math.PI/180)/2) * 1.35;
+  var sph = {r: fitR, theta:0.7, phi:0.34};
+  function updateCam(){
+    var cp=Math.cos(sph.phi), sp=Math.sin(sph.phi), ct=Math.cos(sph.theta), st=Math.sin(sph.theta);
+    camera.position.set(
+      target.x + sph.r*cp*st,
+      target.y + sph.r*sp,
+      target.z + sph.r*cp*ct
+    );
+    camera.lookAt(target);
+  }
+  var HOME = {r:sph.r, theta:sph.theta, phi:sph.phi, tx:ctr.x, ty:ctr.y, tz:ctr.z};
+  updateCam();
+
+  // pointer interaction
+  var dragging=false, panning=false, lx=0, ly=0;
+  var el = renderer.domElement;
+  el.addEventListener('pointerdown', function(e){
+    dragging=true; panning = (e.button===2 || e.shiftKey);
+    lx=e.clientX; ly=e.clientY; el.setPointerCapture(e.pointerId);
+    autoRotate=false; syncRotBtn(); hideHint();
+  });
+  el.addEventListener('pointermove', function(e){
+    if(!dragging) return;
+    var dx=e.clientX-lx, dy=e.clientY-ly; lx=e.clientX; ly=e.clientY;
+    if(panning){
+      var panScale = sph.r*0.0016;
+      var right=new THREE.Vector3(), up=new THREE.Vector3();
+      camera.getWorldDirection(right); right.cross(camera.up).normalize();
+      up.copy(camera.up);
+      target.addScaledVector(right, -dx*panScale);
+      target.addScaledVector(camera.up, dy*panScale);
+    } else {
+      sph.theta -= dx*0.006;
+      sph.phi   += dy*0.006;
+      sph.phi = Math.max(-1.4, Math.min(1.4, sph.phi));
+    }
+    updateCam();
+  });
+  function endDrag(e){ dragging=false; panning=false; try{el.releasePointerCapture(e.pointerId);}catch(_){} }
+  el.addEventListener('pointerup', endDrag);
+  el.addEventListener('pointercancel', endDrag);
+  el.addEventListener('contextmenu', function(e){e.preventDefault();});
+  el.addEventListener('wheel', function(e){
+    e.preventDefault();
+    sph.r *= (1 + (e.deltaY>0?1:-1)*0.08);
+    sph.r = Math.max(extent*0.6, Math.min(extent*8, sph.r));
+    updateCam();
+  }, {passive:false});
+
+  // ---- UI: legend ----
+  var legend = document.getElementById('legend');
+  DATA.neurons.forEach(function(n, idx){
+    var b = document.createElement('button');
+    b.className='n-row'; b.type='button';
+    var col = PALETTE[idx].dark;
+    b.innerHTML =
+      '<span class="sw" style="background:'+col+';color:'+col+'"></span>'+
+      '<span class="n-txt"><div class="n-name">'+n.label+'</div>'+
+      '<div class="n-meta">'+n.src+' &middot; '+n.ds+'</div></span>';
+    b.addEventListener('click', function(){
+      meshes[idx].visible = !meshes[idx].visible;
+      b.classList.toggle('off', !meshes[idx].visible);
+    });
+    legend.appendChild(b);
+  });
+  function syncVisibility(){
+    document.querySelectorAll('.n-row').forEach(function(b,i){
+      if(meshes[i]) meshes[i].visible = !b.classList.contains('off');
+    });
+  }
+
+  // ---- UI: auto-rotate ----
+  var autoRotate = !reduce;
+  var rotBtn = document.getElementById('rotBtn');
+  function syncRotBtn(){ rotBtn.classList.toggle('on', autoRotate); }
+  syncRotBtn();
+  rotBtn.addEventListener('click', function(){ autoRotate=!autoRotate; syncRotBtn(); });
+
+  // template shell toggle
+  var tmplBtn=document.getElementById('tmplBtn');
+  tmplBtn.addEventListener('click', function(){
+    if(!tmesh) return;
+    tmesh.visible=!tmesh.visible;
+    tmplBtn.classList.toggle('on', tmesh.visible);
+  });
+  if(!tmesh){ tmplBtn.style.display='none'; }
+
+  // reset
+  document.getElementById('resetBtn').addEventListener('click', function(){
+    sph.r=HOME.r; sph.theta=HOME.theta; sph.phi=HOME.phi;
+    target.set(HOME.tx,HOME.ty,HOME.tz); updateCam();
+  });
+
+  // ---- backdrop toggle ----
+  var mode='dark';
+  var bgDark=document.getElementById('bgDark'), bgLight=document.getElementById('bgLight');
+  function applyBg(){
+    var isDark = mode!=='light';
+    var bg = isDark?BG_DARK:BG_LIGHT;
+    scene.background.setHex(bg);
+    scene.fog.color.setHex(bg);
+    scene.fog.near = extent*(isDark?0.9:1.05); scene.fog.far = extent*(isDark?2.8:3.2);
+    meshes.forEach(function(m){
+      var p=PALETTE[m.userData.idx];
+      m.material.color.set(isDark?p.dark:p.light);
+      m.material.opacity = isDark?0.95:1.0;
+    });
+    if(tmesh){
+      tmesh.material.color.setHex(isDark?0x8aa0b8:0x59687b);
+      tmesh.material.opacity = isDark?0.10:0.15;
+    }
+  }
+  bgDark.addEventListener('click', function(){ mode='dark'; bgDark.classList.add('on'); bgLight.classList.remove('on'); applyBg(); });
+  bgLight.addEventListener('click', function(){ mode='light'; bgLight.classList.add('on'); bgDark.classList.remove('on'); applyBg(); });
+
+  // ---- hint auto-hide ----
+  var hint=document.getElementById('hint'), hintTimer=setTimeout(hideHint, 5000);
+  function hideHint(){ if(hint){hint.style.opacity='0'; clearTimeout(hintTimer);} }
+
+  // ---- resize + loop ----
+  function resize(){
+    var w=stage.clientWidth, h=stage.clientHeight;
+    renderer.setSize(w,h);
+    camera.aspect=w/h; camera.updateProjectionMatrix();
+  }
+  window.addEventListener('resize', resize); resize();
+
+  function loop(){
+    requestAnimationFrame(loop);
+    if(autoRotate){ sph.theta -= 0.0032; updateCam(); }
+    renderer.render(scene,camera);
+  }
+  loop();
+})();
+</script>

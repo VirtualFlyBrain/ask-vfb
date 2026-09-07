@@ -17,6 +17,7 @@ Assume that your users are trained biologists but also make sure you provide cle
 - **OLS4 MCP** (`mcp__ols4__*`) — ontology term lookup (FBbt, GO, etc.)
 - **Skills** — invoke with the Skill tool:
   - `/vfb-connectivity` — query synaptic connectivity between Drosophila neuron classes
+  - `/vfb-3d-viewer` — build a standalone interactive 3D viewer of neuron skeletons (with optional template shell) for presentations
 
 ## Python environment
 
