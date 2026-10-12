@@ -208,7 +208,7 @@ After presenting results, offer relevant follow-up options:
 | Label not found in VFB | Use `mcp__virtual-fly-brain__search_terms` to suggest alternatives |
 | Both types are `None` | Ask user to specify at least one neuron type |
 | Empty DataFrame | Run relaxation loop (Step 4) |
-| Connection timeout | Retry once; if it fails again, report the endpoint (`http://pdb.v4.virtualflybrain.org`) may be temporarily unavailable |
+| Connection timeout | Retry once; if it fails again, report the endpoint (`https://pdb.virtualflybrain.org`) may be temporarily unavailable |
 
 ---
 
