@@ -138,7 +138,7 @@ Supports:
 - Quick still previews before the full render
 - A closing card, and a `references.md`, with VFB citation wording, dataset names and licences, so the video is properly credited
 
-Needs `ffmpeg`; run `bash .claude/skills/vfb-video/scripts/setup_video.sh` once.
+Needs `ffmpeg`; run `.venv/bin/python .claude/skills/vfb-video/scripts/setup_video.py` once.
 
 ---
 

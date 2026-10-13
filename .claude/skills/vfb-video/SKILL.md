@@ -15,10 +15,10 @@ Use the VFB MCP for all facts and IDs. Never draw or label anything that was not
 ## Setup (once)
 
 ```bash
-bash .claude/skills/vfb-video/scripts/setup_video.sh
+.venv/bin/python .claude/skills/vfb-video/scripts/setup_video.py
 ```
 
-Installs Playwright + Chromium into `.venv` (or `python3`), checks for `ffmpeg`, and caches three.js in `~/.cache/vfb-video`. If `ffmpeg` is missing, tell the user to install it (`brew install ffmpeg` / `sudo apt install ffmpeg`) and stop until it is there. Never use system Python if `.venv` exists.
+Installs Playwright and its Chromium browser into the repo's `.venv` (run `bash setup_venv.sh` first if there is no `.venv`) and checks that `ffmpeg` is installed; if it is not, the script prints the install command for macOS, Ubuntu and Windows. Everything else is bundled in the skill (three.js is vendored in `scene/vendor/`, MIT licence), so nothing else is downloaded except the VFB data you ask for. Always use the `.venv` Python, never system Python.
 
 ## Step 1 — Agree the brief (ask only what is missing)
 
@@ -64,7 +64,7 @@ Rules: URLs must be the `https://www.virtualflybrain.org/data/...` ones from `Im
 ## Step 4 — Prepare, preview, render
 
 ```bash
-PY=.venv/bin/python; S=.claude/skills/vfb-video/scripts
+PY=.venv/bin/python; S=.claude/skills/vfb-video/scripts   # Windows: .venv\\Scripts\\python.exe
 $PY $S/prepare.py videos/<name>/spec.json videos/<name>/work      # downloads data, writes references.md
 $PY $S/render_video.py videos/<name>/work --stills 2,8,16,22       # JPEG previews in work/stills/ (seconds)
 ```
@@ -101,9 +101,13 @@ Give the user: the MP4 path, the `references.md` path, the acknowledgement parag
 
 The video's own closing card shows the same sources automatically. Do not remove it from videos that will be shared; if the user wants a different end card, edit `end_card_lines` in `work/spec.resolved.json` and re-render, keeping the VFB paper and dataset lines.
 
+## Developing
+
+`.venv/bin/python -m pytest .claude/skills/vfb-video` runs the offline tests (spec validation, URL allow-list, reference wording). The renderer is `scene/index.html` (pure function of time, `window.seek(t)`); the spec is validated in `scripts/prepare.py` before anything is downloaded.
+
 ## Gotchas
 
-- `volume.obj` often 404s; the served mesh is `volume_man.obj`. Some individuals have no `swc` — use `obj`.
+- `volume.obj` often 404s; the served mesh is `volume_man.obj`. Some individuals have no `swc` — use `obj`. Some `obj` files (neurons, muscles) are face-less point clouds: they are drawn as dots (`point_size`, `opacity` tune them); prefer `swc` for neurons.
 - Skeleton and mesh coordinates are in template space (µm); that is why all items must share a template.
 - Large template meshes slow rendering; for faster drafts drop `template.obj` or lower `fps` to 24.
 - The clip is a visualisation, not an analysis: describe only what VFB returned (names, datasets, connectivity numbers from the `vfb-connectivity` skill). Do not claim function or connectivity that was not queried.
