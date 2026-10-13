@@ -1,0 +1,19 @@
+{
+  "title": "DA1 olfactory projection neurons",
+  "subtitle": "Two uniglomerular mALT DA1 lPNs (FAFB EM) in the JRC2018U adult brain template",
+  "duration": 24, "fps": 30, "width": 1920, "height": 1080, "used_mcp": true, "used_ontology": true,
+  "template": {"id": "VFB_00101567", "label": "JRC2018U adult brain",
+    "obj": "https://www.virtualflybrain.org/data/VFB/i/0010/1567/VFB_00101567/volume_man.obj",
+    "licenses": [{"source": "JRC 2018 templates & ROIs", "label": "CC-BY-NC-SA_4.0"}]},
+  "items": [
+    {"id": "VFB_00101199", "label": "DA1 lPN #R6 (FAFB:27295)",
+     "swc": "https://www.virtualflybrain.org/data/VFB/i/0010/1199/VFB_00101567/volume.swc",
+     "licenses": [{"source": "EM FAFB Bates and Schlegel et al 2020", "label": "CC-BY_4.0"},
+                  {"source": "EM FAFB Zheng et al 2018", "label": "CC-BY_4.0"},
+                  {"source": "EM FAFB Taisz and Galili et al., 2022", "label": "CC-BY_4.0"}]},
+    {"id": "VFB_00101200", "label": "DA1 lPN #R2 (FAFB:57311)",
+     "swc": "https://www.virtualflybrain.org/data/VFB/i/0010/1200/VFB_00101567/volume.swc",
+     "licenses": [{"source": "EM FAFB Bates and Schlegel et al 2020", "label": "CC-BY_4.0"},
+                  {"source": "EM FAFB Zheng et al 2018", "label": "CC-BY_4.0"}]}
+  ]
+}

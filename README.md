@@ -123,6 +123,25 @@ Supports:
 
 ---
 
+### `/vfb-video`
+
+Make a short 3D video (MP4, 1080p) of specific VFB neurons and brain regions you choose.
+
+**Examples:**
+```
+/vfb-video rotating view of two DA1 olfactory projection neurons in the adult brain
+/vfb-video show the mushroom body lobes with a few MBONs, 30 seconds
+```
+
+Supports:
+- Neurons (skeletons) and brain regions (meshes) from any single VFB template
+- Quick still previews before the full render
+- A closing card, and a `references.md`, with VFB citation wording, dataset names and licences, so the video is properly credited
+
+Needs `ffmpeg`; run `bash .claude/skills/vfb-video/scripts/setup_video.sh` once.
+
+---
+
 ## Output conventions
 
 - All neurons and anatomy terms are hyperlinked to the VFB browser
