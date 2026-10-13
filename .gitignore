@@ -2,3 +2,6 @@
 .idea/*
 .venv/*
 *.pyc
+videos/*
+.pytest_cache/
+__pycache__/
