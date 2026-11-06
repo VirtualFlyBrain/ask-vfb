@@ -196,7 +196,7 @@ After presenting results, offer relevant follow-up options:
 - **Explore a specific neuron**: "To get full details on any neuron listed, I can look it up in VFB using its `short_form` ID."
 - **Reverse the query**: "To find what connects *back* to [upstream_type], swap the upstream/downstream and re-run."
 - **Class-level summary**: "To aggregate these results by neuron class, re-run with `group_by_class=True`."
-- **Visualise in VFB**: "You can view any neuron directly at `https://v2.virtualflybrain.org/org.geppetto.frontend/geppetto?id=<short_form>`."
+- **Visualise in VFB**: "You can view any neuron directly at `https://v3.virtualflybrain.org/org.geppetto.frontend/geppetto?id=<short_form>`."
 
 ---
 

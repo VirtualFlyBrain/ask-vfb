@@ -141,7 +141,7 @@ Mention any neurons the script skipped (no SWC) and why.
 - **Compare subsets**: the per-neuron toggles in the panel isolate any subset
   (e.g. left vs right, or one dataset).
 - **View in VFB**: link the class/individuals to
-  `https://v2.virtualflybrain.org/org.geppetto.frontend/geppetto?id=<ID>&i=<TEMPLATE_ID>,<IMG_IDs>`.
+  `https://v3.virtualflybrain.org/org.geppetto.frontend/geppetto?id=<ID>&i=<TEMPLATE_ID>,<IMG_IDs>`.
 
 ---
 

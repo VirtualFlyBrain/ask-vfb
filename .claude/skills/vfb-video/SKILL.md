@@ -81,7 +81,7 @@ Rendering is software GL: expect roughly 0.1–0.4 s per frame (a 24 s, 30 fps c
 
 `prepare.py` prints `NOTE:` lines for licences that restrict use. Relay them: the JRC2018 templates are **non-commercial** (CC-BY-NC-SA), so a video showing the template must not be used commercially; if the user needs that, re-run without `template.obj`. Anything that is not CC-BY needs its terms checked before public posting. Do not guess a licence — only use what `get_term_info` returned.
 
-Give the user: the MP4 path, the `references.md` path, the acknowledgement paragraph pasted into the reply, and the list of VFB links (`https://v2.virtualflybrain.org/org.geppetto.frontend/geppetto?id=<VFB_ID>&i=<TEMPLATE_ID>,<IMAGE_ID>`) for each item.
+Give the user: the MP4 path, the `references.md` path, the acknowledgement paragraph pasted into the reply, and the list of VFB links (`https://v3.virtualflybrain.org/org.geppetto.frontend/geppetto?id=<VFB_ID>&i=<TEMPLATE_ID>,<IMAGE_ID>`) for each item.
 
 ---
 
