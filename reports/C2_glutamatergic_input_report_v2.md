@@ -1,6 +1,6 @@
 # Glutamatergic Input to the *Drosophila* Centrifugal Neuron C2
 
-Cross-referenced VFB scRNAseq, VFB connectomics, and published literature to characterise the glutamatergic input to [centrifugal neuron C2](https://v2.virtualflybrain.org/org.geppetto.frontend/geppetto?id=FBbt_00003743) and to spell out what this means for visual signal processing.
+Cross-referenced VFB scRNAseq, VFB connectomics, and published literature to characterise the glutamatergic input to [centrifugal neuron C2](https://v3.virtualflybrain.org/org.geppetto.frontend/geppetto?id=FBbt_00003743) and to spell out what this means for visual signal processing.
 
 **Conventions used throughout**
 - [**E**] = directly observed in the VFB data we queried, or reported as a primary observation in cited literature
@@ -11,7 +11,7 @@ Cross-referenced VFB scRNAseq, VFB connectomics, and published literature to cha
 
 ## 1. Identity and wiring of C2
 
-[**E**] *VFB term info on [FBbt_00003743](https://v2.virtualflybrain.org/org.geppetto.frontend/geppetto?id=FBbt_00003743) and the underlying primary literature.*
+[**E**] *VFB term info on [FBbt_00003743](https://v3.virtualflybrain.org/org.geppetto.frontend/geppetto?id=FBbt_00003743) and the underlying primary literature.*
 
 - Per-column small-field columnar centrifugal neuron in the optic lobe (~1 per visual column, ≈750 columns).
 - Receives input in the proximal medulla; sends GABAergic output back to the lamina, with terminals on L1 and L2 "necks" and synapses on L5 and Mi1 in the medulla (Fischbach & Dittrich 1989; Takemura et al. 2013; Nern et al. 2025).
@@ -25,10 +25,10 @@ Values are `expression level / extent` (extent = fraction of C2 cells in which t
 
 | Receptor | Type | Ozel 21 (OL) | Kurmang 20 (OL) | FCA-F head | FCA-M head | Davie 18 | Robustness |
 |---|---|---|---|---|---|---|---|
-| [GluClα](https://v2.virtualflybrain.org/org.geppetto.frontend/geppetto?id=FBgn0024963) | Cl⁻ channel (inhibitory) | 844 / 0.22 | 601 / 0.89 | 1474 / 0.46 | 1614 / 0.56 | 919 / 0.38 | **5/5** |
-| [GluRIA](https://v2.virtualflybrain.org/org.geppetto.frontend/geppetto?id=FBgn0004619) | kainate-clade iGluR | – | 783 / 0.90 | 1481 / 0.50 | 1864 / 0.33 | 874 / 0.42 | 4/5 |
-| [ukar](https://v2.virtualflybrain.org/org.geppetto.frontend/geppetto?id=FBgn0039927) | kainate-clade iGluR | – | 380 / 0.80 | 1522 / 0.54 | 1440 / 0.67 | 775 / 0.41 | 4/5 |
-| [KaiR1D](https://v2.virtualflybrain.org/org.geppetto.frontend/geppetto?id=FBgn0038837) | kainate-clade iGluR | – | 200 / 0.27 | – | – | – | 1/5 |
+| [GluClα](https://v3.virtualflybrain.org/org.geppetto.frontend/geppetto?id=FBgn0024963) | Cl⁻ channel (inhibitory) | 844 / 0.22 | 601 / 0.89 | 1474 / 0.46 | 1614 / 0.56 | 919 / 0.38 | **5/5** |
+| [GluRIA](https://v3.virtualflybrain.org/org.geppetto.frontend/geppetto?id=FBgn0004619) | kainate-clade iGluR | – | 783 / 0.90 | 1481 / 0.50 | 1864 / 0.33 | 874 / 0.42 | 4/5 |
+| [ukar](https://v3.virtualflybrain.org/org.geppetto.frontend/geppetto?id=FBgn0039927) | kainate-clade iGluR | – | 380 / 0.80 | 1522 / 0.54 | 1440 / 0.67 | 775 / 0.41 | 4/5 |
+| [KaiR1D](https://v3.virtualflybrain.org/org.geppetto.frontend/geppetto?id=FBgn0038837) | kainate-clade iGluR | – | 200 / 0.27 | – | – | – | 1/5 |
 | mGluR | metabotropic | – | – | – | – | – | **0/5** |
 | Nmdar1 / Nmdar2 | NMDA | – | – | – | – | – | **0/5** |
 
@@ -41,18 +41,18 @@ Values are `expression level / extent` (extent = fraction of C2 cells in which t
 
 ## 3. Connectomic confirmation of glutamatergic input [E]
 
-`UpstreamClassConnectivity` on [FBbt_00003743](https://v2.virtualflybrain.org/org.geppetto.frontend/geppetto?id=FBbt_00003743) aggregated across all VFB-loaded connectomes (MaleCNS, FlyWire/FAFB, hemibrain, JRC OpticLobe, BANC; 2,667 C2 instances total).
+`UpstreamClassConnectivity` on [FBbt_00003743](https://v3.virtualflybrain.org/org.geppetto.frontend/geppetto?id=FBbt_00003743) aggregated across all VFB-loaded connectomes (MaleCNS, FlyWire/FAFB, hemibrain, JRC OpticLobe, BANC; 2,667 C2 instances total).
 
 | Upstream class | % C2 cells contacted | Total syn | Pairs | Avg syn/pair |
 |---|---:|---:|---:|---:|
-| [glutamatergic neuron](https://v2.virtualflybrain.org/org.geppetto.frontend/geppetto?id=FBbt_00100291) (aggregate) | 88 % | **77 095** | 4 421 | **17.4** |
-| [L1](https://v2.virtualflybrain.org/org.geppetto.frontend/geppetto?id=FBbt_00003719) | 86 % | 67 381 | 2 610 | 25.8 |
-| [L5](https://v2.virtualflybrain.org/org.geppetto.frontend/geppetto?id=FBbt_00003725) | 83 % | 46 607 | 9 853 | 4.7 |
-| [Pm12](https://v2.virtualflybrain.org/org.geppetto.frontend/geppetto?id=FBbt_20011494) | 71 % | 14 050 | 2 203 | 6.4 |
-| [proximal medullary amacrine](https://v2.virtualflybrain.org/org.geppetto.frontend/geppetto?id=FBbt_00003832) (umbrella) | 74 % | 15 532 | 2 777 | 5.6 |
-| [Tm4](https://v2.virtualflybrain.org/org.geppetto.frontend/geppetto?id=FBbt_00003788) | 30 % | 3 148 | 1 029 | 3.1 |
-| [Mi9](https://v2.virtualflybrain.org/org.geppetto.frontend/geppetto?id=FBbt_00111052) | 3 % | 263 | 88 | 3.0 |
-| [Dm9](https://v2.virtualflybrain.org/org.geppetto.frontend/geppetto?id=FBbt_00003841) | 1 % | 51 | 22 | 2.3 |
+| [glutamatergic neuron](https://v3.virtualflybrain.org/org.geppetto.frontend/geppetto?id=FBbt_00100291) (aggregate) | 88 % | **77 095** | 4 421 | **17.4** |
+| [L1](https://v3.virtualflybrain.org/org.geppetto.frontend/geppetto?id=FBbt_00003719) | 86 % | 67 381 | 2 610 | 25.8 |
+| [L5](https://v3.virtualflybrain.org/org.geppetto.frontend/geppetto?id=FBbt_00003725) | 83 % | 46 607 | 9 853 | 4.7 |
+| [Pm12](https://v3.virtualflybrain.org/org.geppetto.frontend/geppetto?id=FBbt_20011494) | 71 % | 14 050 | 2 203 | 6.4 |
+| [proximal medullary amacrine](https://v3.virtualflybrain.org/org.geppetto.frontend/geppetto?id=FBbt_00003832) (umbrella) | 74 % | 15 532 | 2 777 | 5.6 |
+| [Tm4](https://v3.virtualflybrain.org/org.geppetto.frontend/geppetto?id=FBbt_00003788) | 30 % | 3 148 | 1 029 | 3.1 |
+| [Mi9](https://v3.virtualflybrain.org/org.geppetto.frontend/geppetto?id=FBbt_00111052) | 3 % | 263 | 88 | 3.0 |
+| [Dm9](https://v3.virtualflybrain.org/org.geppetto.frontend/geppetto?id=FBbt_00003841) | 1 % | 51 | 22 | 2.3 |
 
 [**E**] L1 supplies ~87 % of the total "glutamatergic neuron" synaptic weight onto C2 and averages ~26 syn per L1→C2 pair; the result is reproducible across all VFB connectomes.
 
@@ -104,10 +104,10 @@ Our cross-dataset transcriptomics partly supports this but tempers the strong fo
 
 | Subunit | C2 (5 ds) | L1 (5 ds) | L2 (5 ds) | L5 (4 ds, no Davie) |
 |---|---|---|---|---|
-| [Rdl](https://v2.virtualflybrain.org/org.geppetto.frontend/geppetto?id=FBgn0004244) (Cl⁻) | **5/5, extent 0.83–0.96** (1713–6073) | 5/5 but **low extent 0.27–0.59** (352–2841) | 4/5, low extent 0.27–0.48 (313–2545) | **4/4, extent 0.88–0.97** (1608–4407) |
-| [Grd](https://v2.virtualflybrain.org/org.geppetto.frontend/geppetto?id=FBgn0001134) (cation candidate) | **0/5 — absent** | 4/5, extent 0.23–0.46 (335–1278) | **5/5, extent 0.28–0.66** (342–1314) | **0/4 — absent** |
-| [Lcch3](https://v2.virtualflybrain.org/org.geppetto.frontend/geppetto?id=FBgn0010240) (β-subunit) | 4/5, extent 0.33–0.64 (316–1396) | 4/5, extent up to 0.80 (308–1308) | 3/5, extent up to 0.80 (312–484) | 2/4, extent up to 0.66 |
-| [CG8916](https://v2.virtualflybrain.org/org.geppetto.frontend/geppetto?id=FBgn0030707) (cation candidate) | **0/5 — absent** | 3/5, extent up to 0.54 (295–739) | 3/5, extent up to 0.70 (327–674) | **0/4 — absent** |
+| [Rdl](https://v3.virtualflybrain.org/org.geppetto.frontend/geppetto?id=FBgn0004244) (Cl⁻) | **5/5, extent 0.83–0.96** (1713–6073) | 5/5 but **low extent 0.27–0.59** (352–2841) | 4/5, low extent 0.27–0.48 (313–2545) | **4/4, extent 0.88–0.97** (1608–4407) |
+| [Grd](https://v3.virtualflybrain.org/org.geppetto.frontend/geppetto?id=FBgn0001134) (cation candidate) | **0/5 — absent** | 4/5, extent 0.23–0.46 (335–1278) | **5/5, extent 0.28–0.66** (342–1314) | **0/4 — absent** |
+| [Lcch3](https://v3.virtualflybrain.org/org.geppetto.frontend/geppetto?id=FBgn0010240) (β-subunit) | 4/5, extent 0.33–0.64 (316–1396) | 4/5, extent up to 0.80 (308–1308) | 3/5, extent up to 0.80 (312–484) | 2/4, extent up to 0.66 |
+| [CG8916](https://v3.virtualflybrain.org/org.geppetto.frontend/geppetto?id=FBgn0030707) (cation candidate) | **0/5 — absent** | 3/5, extent up to 0.54 (295–739) | 3/5, extent up to 0.70 (327–674) | **0/4 — absent** |
 
 ### Interpretation
 

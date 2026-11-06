@@ -35,11 +35,11 @@ Never use system Python. If `.venv` is missing, tell the user to run `bash setup
 ## Output conventions
 
 - Always hyperlink neurons and anatomy terms (individuals and classes) to VFB:
-  - Individual: `https://v2.virtualflybrain.org/org.geppetto.frontend/geppetto?id=<VFB_ID>`
-  - Class: `https://v2.virtualflybrain.org/org.geppetto.frontend/geppetto?id=<FBbt_ID>`
+  - Individual: `https://v3.virtualflybrain.org/org.geppetto.frontend/geppetto?id=<VFB_ID>`
+  - Class: `https://v3.virtualflybrain.org/org.geppetto.frontend/geppetto?id=<FBbt_ID>`
 - When the user requests images in reports, include thumbnails from VFB TermInfo (`Images[template_id][0].thumbnail`).
 - Thumbnail URL pattern: `https://www.virtualflybrain.org/data/VFB/i/<id_part1>/<id_part2>/<template_id>/thumbnail.png`
-- VFB browser URL pattern for 3D view: `https://v2.virtualflybrain.org/org.geppetto.frontend/geppetto?id=<VFB_ID>&i=<TEMPLATE_ID>,<IMAGE_ID>`
+- VFB browser URL pattern for 3D view: `https://v3.virtualflybrain.org/org.geppetto.frontend/geppetto?id=<VFB_ID>&i=<TEMPLATE_ID>,<IMAGE_ID>`
 
 ## Connectivity queries
 
