@@ -31,9 +31,9 @@ Query scripts live in `.claude/skills/flybase-combo-pubs/scripts/` and are run v
 
 ### Database connection
 
-All queries connect to the FlyBase public Chado database using `psycopg`:
+All queries connect to FlyBase Chado using `psycopg`, trying VFB's own copy first and FlyBase's public server if it is unavailable (`FB_CHADO_HOST` overrides the list):
 
-- **Host:** `chado.flybase.org`
+- **Host:** `chado.flybase.virtualflybrain.org:443` (TLS, Postgres 17 direct SSL), then `chado.flybase.org`
 - **User:** `flybase`
 - **Password:** `flybase`
 - **Database:** `flybase`
@@ -138,7 +138,7 @@ After presenting results, offer relevant follow-ups:
 |---|---|
 | `.venv` not found | Run `bash setup_venv.sh` automatically |
 | `psycopg` import error | Run `bash setup_venv.sh` to install dependencies |
-| Connection timeout | Retry once; if it fails again, report that `chado.flybase.org` may be temporarily unavailable |
+| Connection timeout | Retry once; if it fails again, report that FlyBase Chado (VFB's copy and FlyBase's server) may be temporarily unavailable |
 | Combination not found | Try broader ILIKE search; suggest checking spelling or using a FlyBase ID |
 | No publications found | Report that no publications are currently linked for this combination in FlyBase |
 | Ambiguous name (multiple matches) | Show disambiguation list with IDs; ask user to pick |

@@ -31,9 +31,9 @@ Query scripts live in `.claude/skills/flybase-stocks/scripts/` and are run via:
 
 ### Database connection
 
-All queries connect to the FlyBase public Chado database using `psycopg`:
+All queries connect to FlyBase Chado using `psycopg`, trying VFB's own copy first and FlyBase's public server if it is unavailable (`FB_CHADO_HOST` overrides the list):
 
-- **Host:** `chado.flybase.org`
+- **Host:** `chado.flybase.virtualflybrain.org:443` (TLS, Postgres 17 direct SSL), then `chado.flybase.org`
 - **User:** `flybase`
 - **Password:** `flybase`
 - **Database:** `flybase`
@@ -174,7 +174,7 @@ After presenting results, offer relevant follow-ups:
 |---|---|
 | `.venv` not found | Run `bash setup_venv.sh` automatically |
 | `psycopg` import error | Run `bash setup_venv.sh` to install dependencies |
-| Connection timeout | Retry once; if it fails again, report that `chado.flybase.org` may be temporarily unavailable |
+| Connection timeout | Retry once; if it fails again, report that FlyBase Chado (VFB's copy and FlyBase's server) may be temporarily unavailable |
 | Feature not found | Try broader ILIKE search; suggest checking spelling or using a FlyBase ID |
 | No stocks found | Report that no stocks are currently available for this entity in FlyBase; suggest checking FlyBase directly |
 | Ambiguous name (multiple matches) | Show disambiguation list with IDs and types; ask user to pick |

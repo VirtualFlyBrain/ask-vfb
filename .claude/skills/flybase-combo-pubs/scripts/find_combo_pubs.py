@@ -12,14 +12,33 @@ import pandas as pd
 import psycopg
 
 
+
+# VFB's own copy of FlyBase Chado first (chado.flybase.virtualflybrain.org:443, Postgres 17 direct SSL, which
+# psycopg[binary] supports), then FlyBase's public server. FB_CHADO_HOST overrides: comma-separated host or host:port.
+_CHADO_HOSTS = "chado.flybase.virtualflybrain.org:443,chado.flybase.org"
+
+
+def chado_connect(**kwargs):
+    """psycopg connection to the first reachable Chado server; kwargs as for psycopg.connect."""
+    import os
+    import sys
+    hosts = [h.strip() for h in (os.environ.get("FB_CHADO_HOST") or _CHADO_HOSTS).split(",") if h.strip()]
+    for i, entry in enumerate(hosts):
+        host, _, port = entry.partition(":")
+        args = dict(kwargs, host=host, dbname="flybase", user="flybase", password="flybase")
+        if port:
+            args["port"] = int(port)
+        if port == "443":
+            args.update(sslmode="require", sslnegotiation="direct")
+        try:
+            return psycopg.connect(**args)
+        except psycopg.Error as e:
+            if i == len(hosts) - 1:
+                raise
+            print("Chado at %s unavailable (%s); trying %s" % (entry, str(e).strip().splitlines()[0] if str(e).strip() else type(e).__name__, hosts[i + 1]), file=sys.stderr)
+
 def connect():
-    return psycopg.connect(
-        host="chado.flybase.org",
-        dbname="flybase",
-        user="flybase",
-        password="flybase",
-        connect_timeout=30,
-    )
+    return chado_connect(connect_timeout=30)
 
 
 def find_publications(cur, fbco_id):
